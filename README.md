@@ -1,6 +1,6 @@
 
   
-[![AG-UI Workshop – June 5](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94%20-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
+[![AG-UI Workshop – June 5](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94%20-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-build-an-agent-canvas)
 ![Discord](https://img.shields.io/discord/1379082175625953370?logo=discord&logoColor=%23FFFFFF&label=Discord&color=%236963ff)
 [![Quickstart](https://img.shields.io/badge/Quickstart%20%E2%80%94-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
 
@@ -145,7 +145,7 @@ Join the Discord: https://discord.gg/Jd3FzfdJa8
 
 ### Upcoming Events
 
-- **[AG-UI: Workshop](https://go.copilotkit.ai/ag-ui-working-group-3)**  
+- **[AG-UI: Workshop](https://go.copilotkit.ai/ag-ui-build-an-agent-canvas)**  
   📅 Friday, June 5, 9:00 AM PT  
   🔗 [Register now](https://go.copilotkit.ai/ag-ui-working-group-3)
 
