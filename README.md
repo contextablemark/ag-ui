@@ -1,20 +1,23 @@
 
   
-[![AG-UI Workshop – June 5](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94%20-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-build-an-agent-canvas)
-![Discord](https://img.shields.io/discord/1379082175625953370?logo=discord&logoColor=%23FFFFFF&label=Discord&color=%236963ff)
-[![Quickstart](https://img.shields.io/badge/Quickstart%20%E2%80%94-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
-
-
 
 
 
 # <img src="https://github.com/user-attachments/assets/ebc0dd08-8732-4519-9b6c-452ce54d8058" alt="ag-ui Logo" height="42px" /> AG-UI: The Agent-User Interaction Protocol
+[![AG-UI Workshop – June 5](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94%20-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-build-an-agent-canvas)
+![Discord](https://img.shields.io/discord/1379082175625953370?logo=discord&logoColor=%23FFFFFF&label=Discord&color=%236963ff)
+[![Quickstart](https://img.shields.io/badge/Quickstart%20%E2%80%94-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
+
+![0613](https://github.com/user-attachments/assets/bec3bc01-d8f2-4667-885e-028cbcbc8439)
+
+
+
 
 AG-UI is an open, lightweight, event-based protocol that standardizes **how AI agents connect to front-end applications**.
 
 ➡️ See demos of AG-UI-enabled applications [here](https://github.com/ag-ui-protocol/ag-ui?tab=readme-ov-file#ag-ui-compatible-agent-frameworks)
 
-<img src="https://github.com/user-attachments/assets/215227a5-9698-4d97-a46e-8904b95bfa08" alt="ag-ui Logo" style="max-width: 100px; height: auto;" />
+
 
 # ➡️ Learn more (AG-UI Specification)
 
