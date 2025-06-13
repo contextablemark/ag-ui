@@ -1,8 +1,10 @@
 
   
 [![AG-UI Workshop – June 5](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94%20-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
-![Discord](https://img.shields.io/discord/:Jd3FzfdJa8)
+![Discord](https://img.shields.io/discord/1379082175625953370?logo=discord&logoColor=%23FFFFFF&label=Discord&color=%236963ff)
 [![Quickstart](https://img.shields.io/badge/Quickstart%20%E2%80%94-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-working-group-3)
+
+
 
 
 
