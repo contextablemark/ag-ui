@@ -9,6 +9,7 @@ import { openai } from "@ai-sdk/openai";
 import { LangGraphAgent } from "@ag-ui/langgraph";
 import { AgnoAgent } from "@ag-ui/agno";
 import { LlamaIndexAgent } from "@ag-ui/llamaindex";
+import { CrewAIAgent } from "@ag-ui/crewai";
 
 export const agentsIntegrations: AgentIntegrationConfig[] = [
   {
@@ -131,5 +132,15 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
         }),
       };
     },
-  }
+  },
+  {
+    id: "crewai",
+    agents: async () => {
+      return {
+        agentic_chat: new CrewAIAgent({
+          url: "http://localhost:8000/",
+        }),
+      };
+    },
+  },
 ];
