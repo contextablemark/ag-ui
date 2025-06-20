@@ -108,6 +108,12 @@ def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
                                 )
                             )
                             queue.put_nowait(
+                                StateSnapshotEvent(
+                                    type=EventType.STATE_SNAPSHOT,
+                                    state=source.state
+                                )
+                            )
+                            queue.put_nowait(
                                 StepFinishedEvent(
                                     type=EventType.STEP_FINISHED,
                                     step_name=event.method_name
