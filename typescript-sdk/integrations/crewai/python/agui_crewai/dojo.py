@@ -4,6 +4,8 @@ from fastapi import FastAPI
 
 from .fastapi import add_crewai_endpoint
 from .examples.agentic_chat import AgenticChatFlow
+from .examples.human_in_the_loop import HumanInTheLoopFlow
+from .examples.tool_based_generative_ui import ToolBasedGenerativeUIFlow
 
 app = FastAPI(title="CrewAI Dojo Example Server")
 
@@ -11,6 +13,18 @@ add_crewai_endpoint(
     app=app,
     flow_class=AgenticChatFlow,
     path="/agentic_chat",
+)
+
+add_crewai_endpoint(
+    app=app,
+    flow_class=HumanInTheLoopFlow,
+    path="/human_in_the_loop",
+)
+
+add_crewai_endpoint(
+    app=app,
+    flow_class=ToolBasedGenerativeUIFlow,
+    path="/tool_based_generative_ui",
 )
 
 def main():

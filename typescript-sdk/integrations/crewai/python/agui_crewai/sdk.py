@@ -2,8 +2,9 @@
 This is a placeholder for the copilotkit_stream function.
 """
 
+import uuid
 import asyncio
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Mapping
 from litellm.types.utils import (
   ModelResponse,
   Choices,
@@ -14,8 +15,8 @@ from litellm.types.utils import (
 from litellm.litellm_core_utils.streaming_handler import CustomStreamWrapper
 from crewai.flow.flow import FlowState
 from crewai.utilities.events import crewai_event_bus
-from pydantic import BaseModel, Field
-from ag_ui.core import EventType
+from pydantic import BaseModel, Field, TypeAdapter
+from ag_ui.core import EventType, Message
 from .context import flow_context
 from .events import BridgedTextMessageChunkEvent, BridgedToolCallChunkEvent
 
@@ -165,3 +166,26 @@ async def _copilotkit_stream_custom_stream_wrapper(response: CustomStreamWrapper
 
 def _copilotkit_stream_response(response: ModelResponse):
     return response
+
+
+message_adapter = TypeAdapter(Message)
+
+def litellm_messages_to_ag_ui_messages(messages: List[LiteLLMMessage]) -> List[Message]:
+    """
+    Converts a list of LiteLLM messages to a list of ag_ui messages.
+    """
+    ag_ui_messages: List[Message] = []
+    for message in messages:
+        message_dict = message.model_dump() if not isinstance(message, Mapping) else message
+
+        # whitelist the fields we want to keep
+        whitelist = ["content", "role", "tool_calls", "id", "name", "tool_call_id"]
+        message_dict = {k: v for k, v in message_dict.items() if k in whitelist}
+        if not "id" in message_dict:
+            message_dict["id"] = str(uuid.uuid4())
+        # remove all None values
+        message_dict = {k: v for k, v in message_dict.items() if v is not None}
+        ag_ui_message = message_adapter.validate_python(message_dict)
+        ag_ui_messages.append(ag_ui_message)
+
+    return ag_ui_messages

@@ -7,7 +7,13 @@ from typing import List
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 
-from crewai.utilities.events import crewai_event_bus, FlowStartedEvent, FlowFinishedEvent
+from crewai.utilities.events import (
+    crewai_event_bus,
+    FlowStartedEvent,
+    FlowFinishedEvent,
+    MethodExecutionStartedEvent,
+    MethodExecutionFinishedEvent,
+)
 from crewai.flow.flow import Flow
 
 from ag_ui.core import (
@@ -19,11 +25,19 @@ from ag_ui.core import (
     Message,
     Tool
 )
-from ag_ui.core.events import TextMessageChunkEvent, ToolCallChunkEvent
+from ag_ui.core.events import (
+  TextMessageChunkEvent,
+  ToolCallChunkEvent,
+  StepStartedEvent,
+  StepFinishedEvent,
+  MessagesSnapshotEvent,
+  StateSnapshotEvent
+)
 from ag_ui.encoder import EventEncoder
 
 from .events import BridgedTextMessageChunkEvent, BridgedToolCallChunkEvent
 from .context import flow_context
+from .sdk import litellm_messages_to_ag_ui_messages
 
 
 def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
@@ -73,6 +87,32 @@ def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
                                 ),
                             )
                             queue.put_nowait(None)
+                    
+                    @crewai_event_bus.on(MethodExecutionStartedEvent)
+                    def _(source, event):
+                        if source == flow:
+                            queue.put_nowait(
+                                StepStartedEvent(
+                                    type=EventType.STEP_STARTED,
+                                    step_name=event.method_name
+                                )
+                            )
+                    
+                    @crewai_event_bus.on(MethodExecutionFinishedEvent)
+                    def _(source, event):
+                        if source == flow:
+                            queue.put_nowait(
+                                MessagesSnapshotEvent(
+                                    type=EventType.MESSAGES_SNAPSHOT,
+                                    messages=litellm_messages_to_ag_ui_messages(source.state.messages)
+                                )
+                            )
+                            queue.put_nowait(
+                                StepFinishedEvent(
+                                    type=EventType.STEP_FINISHED,
+                                    step_name=event.method_name
+                                )
+                            )
 
                     @crewai_event_bus.on(BridgedTextMessageChunkEvent)
                     def _(source, event):

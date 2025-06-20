@@ -140,6 +140,12 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
         agentic_chat: new CrewAIAgent({
           url: "http://localhost:8000/agentic_chat",
         }),
+        human_in_the_loop: new CrewAIAgent({
+          url: "http://localhost:8000/human_in_the_loop",
+        }),
+        tool_based_generative_ui: new CrewAIAgent({
+          url: "http://localhost:8000/tool_based_generative_ui",
+        }),
       };
     },
   },
