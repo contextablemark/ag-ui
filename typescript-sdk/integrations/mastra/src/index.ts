@@ -5,6 +5,7 @@ import type {
   Message,
   MessagesSnapshotEvent,
   RunAgentInput,
+  RunErrorEvent,
   RunFinishedEvent,
   RunStartedEvent,
   TextMessageChunkEvent,
@@ -174,7 +175,21 @@ export class MastraAgent extends AbstractAgent {
   }
 
   protected run(input: RunAgentInput): Observable<BaseEvent> {
-    const finalMessages: Message[] = [...input.messages];
+    const filteredMessages: Message[] = input.messages.filter(
+      (m) => m.role === "user" || m.role === "assistant" || m.role === "system",
+    );
+
+    if (filteredMessages.length === 0) {
+      return new Observable<BaseEvent>((subscriber) => {
+        subscriber.next({
+          type: EventType.RUN_ERROR,
+          message: "No messages found",
+        } as RunErrorEvent);
+        subscriber.complete();
+      });
+    }
+
+    const finalMessages: Message[] = [...filteredMessages];
     let messageId = randomUUID();
     let assistantMessage: AssistantMessage = {
       id: messageId,
@@ -185,88 +200,91 @@ export class MastraAgent extends AbstractAgent {
     finalMessages.push(assistantMessage);
 
     return new Observable<BaseEvent>((subscriber) => {
-      subscriber.next({
-        type: EventType.RUN_STARTED,
-        threadId: input.threadId,
-        runId: input.runId,
-      } as RunStartedEvent);
+      const run = async () => {
+        subscriber.next({
+          type: EventType.RUN_STARTED,
+          threadId: input.threadId,
+          runId: input.runId,
+        } as RunStartedEvent);
 
-      this.streamMastraAgent(input, {
-        onTextPart: (text) => {
-          assistantMessage.content += text;
-          const event: TextMessageChunkEvent = {
-            type: EventType.TEXT_MESSAGE_CHUNK,
-            role: "assistant",
-            messageId,
-            delta: text,
-          };
-          subscriber.next(event);
-        },
-        onToolCallPart: (streamPart) => {
-          let toolCall: ToolCall = {
-            id: streamPart.toolCallId,
-            type: "function",
-            function: {
-              name: streamPart.toolName,
-              arguments: JSON.stringify(streamPart.args),
-            },
-          };
-          assistantMessage.toolCalls!.push(toolCall);
+        this.streamMastraAgent(input, {
+          onTextPart: (text) => {
+            assistantMessage.content += text;
+            const event: TextMessageChunkEvent = {
+              type: EventType.TEXT_MESSAGE_CHUNK,
+              role: "assistant",
+              messageId,
+              delta: text,
+            };
+            subscriber.next(event);
+          },
+          onToolCallPart: (streamPart) => {
+            let toolCall: ToolCall = {
+              id: streamPart.toolCallId,
+              type: "function",
+              function: {
+                name: streamPart.toolName,
+                arguments: JSON.stringify(streamPart.args),
+              },
+            };
+            assistantMessage.toolCalls!.push(toolCall);
 
-          const startEvent: ToolCallStartEvent = {
-            type: EventType.TOOL_CALL_START,
-            parentMessageId: messageId,
-            toolCallId: streamPart.toolCallId,
-            toolCallName: streamPart.toolName,
-          };
-          subscriber.next(startEvent);
+            const startEvent: ToolCallStartEvent = {
+              type: EventType.TOOL_CALL_START,
+              parentMessageId: messageId,
+              toolCallId: streamPart.toolCallId,
+              toolCallName: streamPart.toolName,
+            };
+            subscriber.next(startEvent);
 
-          const argsEvent: ToolCallArgsEvent = {
-            type: EventType.TOOL_CALL_ARGS,
-            toolCallId: streamPart.toolCallId,
-            delta: JSON.stringify(streamPart.args),
-          };
-          subscriber.next(argsEvent);
+            const argsEvent: ToolCallArgsEvent = {
+              type: EventType.TOOL_CALL_ARGS,
+              toolCallId: streamPart.toolCallId,
+              delta: JSON.stringify(streamPart.args),
+            };
+            subscriber.next(argsEvent);
 
-          const endEvent: ToolCallEndEvent = {
-            type: EventType.TOOL_CALL_END,
-            toolCallId: streamPart.toolCallId,
-          };
-          subscriber.next(endEvent);
-        },
-        onToolResultPart(streamPart) {
-          const toolMessage: ToolMessage = {
-            role: "tool",
-            id: randomUUID(),
-            toolCallId: streamPart.toolCallId,
-            content: JSON.stringify(streamPart.result),
-          };
-          finalMessages.push(toolMessage);
-        },
-        onFinishMessagePart: () => {
-          // Emit message snapshot
-          const event: MessagesSnapshotEvent = {
-            type: EventType.MESSAGES_SNAPSHOT,
-            messages: finalMessages,
-          };
-          subscriber.next(event);
+            const endEvent: ToolCallEndEvent = {
+              type: EventType.TOOL_CALL_END,
+              toolCallId: streamPart.toolCallId,
+            };
+            subscriber.next(endEvent);
+          },
+          onToolResultPart(streamPart) {
+            const toolMessage: ToolMessage = {
+              role: "tool",
+              id: randomUUID(),
+              toolCallId: streamPart.toolCallId,
+              content: JSON.stringify(streamPart.result),
+            };
+            finalMessages.push(toolMessage);
+          },
+          onFinishMessagePart: () => {
+            // Emit message snapshot
+            const event: MessagesSnapshotEvent = {
+              type: EventType.MESSAGES_SNAPSHOT,
+              messages: finalMessages,
+            };
+            subscriber.next(event);
 
-          // Emit run finished event
-          subscriber.next({
-            type: EventType.RUN_FINISHED,
-            threadId: input.threadId,
-            runId: input.runId,
-          } as RunFinishedEvent);
+            // Emit run finished event
+            subscriber.next({
+              type: EventType.RUN_FINISHED,
+              threadId: input.threadId,
+              runId: input.runId,
+            } as RunFinishedEvent);
 
-          // Complete the observable
-          subscriber.complete();
-        },
-        onError: (error) => {
-          console.error("error", error);
-          // Handle error
-          subscriber.error(error);
-        },
-      });
+            // Complete the observable
+            subscriber.complete();
+          },
+          onError: (error) => {
+            console.error("error", error);
+            // Handle error
+            subscriber.error(error);
+          },
+        });
+      };
+      run();
 
       return () => {};
     });
