@@ -4,7 +4,7 @@ A simple agentic chat flow.
 
 from crewai.flow.flow import Flow, start
 from litellm import completion
-from .utils import copilotkit_stream, CopilotKitState
+from ..sdk import copilotkit_stream, CopilotKitState
 
 class AgenticChatFlow(Flow[CopilotKitState]):
 
@@ -30,7 +30,7 @@ class AgenticChatFlow(Flow[CopilotKitState]):
 
                 # 1.2 Bind the available tools to the model
                 tools=[
-                    # *self.state.copilotkit.actions,
+                    *self.state.copilotkit.actions,
                 ],
 
                 # 1.3 Disable parallel tool calls to avoid race conditions,

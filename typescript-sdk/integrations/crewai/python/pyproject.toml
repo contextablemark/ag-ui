@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "example_server"
+name = "agui_crewai"
 version = "0.1.0"
 description = ""
 authors = ["Markus Ecker <markus.ecker@gmail.com>"]
@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "<3.14,>=3.10"
-ag-ui-protocol = "^0.1.5"
+ag-ui-protocol = "==0.1.5"
 fastapi = "^0.115.12"
 uvicorn = "^0.34.3"
 crewai = "^0.130.0"
@@ -17,4 +17,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-dev = "example_server:main"
+dev = "agui_crewai.dojo:main"

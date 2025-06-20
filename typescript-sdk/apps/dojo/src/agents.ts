@@ -138,7 +138,7 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
     agents: async () => {
       return {
         agentic_chat: new CrewAIAgent({
-          url: "http://localhost:8000/",
+          url: "http://localhost:8000/agentic_chat",
         }),
       };
     },
