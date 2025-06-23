@@ -117,6 +117,7 @@ export class LangGraphAgent extends AbstractAgent {
   activeRun?: RunMetadata;
   // @ts-expect-error no need to initialize subscriber right now
   subscriber: Subscriber<ProcessedEvents>;
+  defaultSchemaKeys = DEFAULT_SCHEMA_KEYS;
 
   constructor(config: LangGraphAgentConfig) {
     super(config);
@@ -667,7 +668,7 @@ export class LangGraphAgent extends AbstractAgent {
     const schemaKeys = this.activeRun!.schemaKeys!;
     // Do not emit state keys that are not part of the output schema
     if (schemaKeys?.output) {
-      state = filterObjectBySchemaKeys(state, [...DEFAULT_SCHEMA_KEYS, ...schemaKeys.output]);
+      state = filterObjectBySchemaKeys(state, [...this.defaultSchemaKeys, ...schemaKeys.output]);
     }
     // return state
     return state;
@@ -711,7 +712,7 @@ export class LangGraphAgent extends AbstractAgent {
       if (cfg.configurable) {
         filteredConfigurable = schemaKeys?.config
           ? filterObjectBySchemaKeys(cfg?.configurable, [
-              ...DEFAULT_SCHEMA_KEYS,
+              ...this.defaultSchemaKeys,
               ...(schemaKeys?.config ?? []),
             ])
           : cfg?.configurable;
@@ -779,8 +780,6 @@ export class LangGraphAgent extends AbstractAgent {
   }
 
   async getSchemaKeys(): Promise<SchemaKeys> {
-    const CONSTANT_KEYS = ["messages"];
-
     try {
       const graphSchema = await this.client.assistants.getSchemas(this.assistant!.assistant_id);
       let configSchema = null;
@@ -788,18 +787,18 @@ export class LangGraphAgent extends AbstractAgent {
         configSchema = Object.keys(graphSchema.config_schema.properties);
       }
       if (!graphSchema.input_schema?.properties || !graphSchema.output_schema?.properties) {
-        return { config: [], input: CONSTANT_KEYS, output: CONSTANT_KEYS };
+        return { config: [], input: this.defaultSchemaKeys, output: this.defaultSchemaKeys };
       }
       const inputSchema = Object.keys(graphSchema.input_schema.properties);
       const outputSchema = Object.keys(graphSchema.output_schema.properties);
 
       return {
-        input: inputSchema && inputSchema.length ? [...inputSchema, ...CONSTANT_KEYS] : null,
-        output: outputSchema && outputSchema.length ? [...outputSchema, ...CONSTANT_KEYS] : null,
+        input: inputSchema && inputSchema.length ? [...inputSchema, ...this.defaultSchemaKeys] : null,
+        output: outputSchema && outputSchema.length ? [...outputSchema, ...this.defaultSchemaKeys] : null,
         config: configSchema,
       };
     } catch (e) {
-      return { config: [], input: CONSTANT_KEYS, output: CONSTANT_KEYS };
+      return { config: [], input: this.defaultSchemaKeys, output: this.defaultSchemaKeys };
     }
   }
 
