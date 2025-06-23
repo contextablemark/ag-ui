@@ -58,6 +58,13 @@ export const menuIntegrations: MenuIntegrationConfig[] = [
   {
     id: "crewai",
     name: "CrewAI",
-    features: ["agentic_chat", "human_in_the_loop", "tool_based_generative_ui"],
+    features: [
+      "agentic_chat",
+      "human_in_the_loop",
+      "tool_based_generative_ui",
+      "agentic_generative_ui",
+      "shared_state",
+      "predictive_state_updates",
+    ],
   },
 ];

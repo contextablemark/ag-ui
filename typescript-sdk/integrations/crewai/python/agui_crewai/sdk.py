@@ -3,8 +3,7 @@ This is a placeholder for the copilotkit_stream function.
 """
 
 import uuid
-import asyncio
-from typing import List, Any, Optional, Mapping
+from typing import List, Any, Optional, Mapping, Dict, Literal, TypedDict
 from litellm.types.utils import (
   ModelResponse,
   Choices,
@@ -18,16 +17,13 @@ from crewai.utilities.events import crewai_event_bus
 from pydantic import BaseModel, Field, TypeAdapter
 from ag_ui.core import EventType, Message
 from .context import flow_context
-from .events import BridgedTextMessageChunkEvent, BridgedToolCallChunkEvent
-
-async def _yield_control():
-    """
-    Yield control to the event loop.
-    """
-    loop = asyncio.get_running_loop()
-    future = loop.create_future()
-    loop.call_soon(future.set_result, None)
-    await future
+from .events import (
+  BridgedTextMessageChunkEvent,
+  BridgedToolCallChunkEvent,
+  BridgedCustomEvent,
+  BridgedStateSnapshotEvent
+)
+from .utils import yield_control
 
 class CopilotKitProperties(BaseModel):
     """CopilotKit properties"""
@@ -37,6 +33,113 @@ class CopilotKitState(FlowState):
     """CopilotKit state"""
     messages: List[Any] = Field(default_factory=list)
     copilotkit: CopilotKitProperties = Field(default_factory=CopilotKitProperties)
+
+class PredictStateConfig(TypedDict):
+    """
+    Predict State Config
+    """
+    tool_name: str
+    tool_argument: Optional[str]
+
+async def copilotkit_predict_state(
+        config: Dict[str, PredictStateConfig]
+    ) -> Literal[True]:
+    """
+    Stream tool calls as state to CopilotKit.
+
+    To emit a tool call as streaming CrewAI state, pass the destination key in state,
+    the tool name and optionally the tool argument. (If you don't pass the argument name,
+    all arguments are emitted under the state key.)
+
+    ```python
+    from copilotkit.crewai import copilotkit_predict_state
+
+    await copilotkit_predict_state(
+        {
+            "steps": {
+                "tool": "SearchTool",
+                "tool_argument": "steps",
+            },
+        }
+    )
+    ```
+
+    Parameters
+    ----------
+    config : Dict[str, CopilotKitPredictStateConfig]
+        The configuration to predict the state.
+
+    Returns
+    -------
+    Awaitable[bool]
+        Always return True.
+    """
+    flow = flow_context.get(None)
+
+    value = [
+        {
+            "state_key": k,
+            "tool": v["tool_name"],
+            "tool_argument": v["tool_argument"]
+        } for k, v in config.items()
+    ]
+    crewai_event_bus.emit(
+        flow,
+        BridgedCustomEvent(
+            type=EventType.CUSTOM,
+            name="PredictState",
+            value=value
+        )
+    )
+
+    await yield_control()
+
+    return True
+
+async def copilotkit_emit_state(state: Any) -> Literal[True]:
+    """
+    Emits intermediate state to CopilotKit.
+    Useful if you have a longer running node and you want to update the user with the current state of the node.
+
+    To install the CopilotKit SDK, run:
+
+    ```bash
+    pip install copilotkit[crewai]
+    ```
+
+    ### Examples
+
+    ```python
+    from copilotkit.crewai import copilotkit_emit_state
+
+    for i in range(10):
+        await some_long_running_operation(i)
+        await copilotkit_emit_state({"progress": i})
+    ```
+
+    Parameters
+    ----------
+    state : Any
+        The state to emit (Must be JSON serializable).
+
+    Returns
+    -------
+    Awaitable[bool]
+        Always return True.
+
+    """
+    flow = flow_context.get(None)
+    crewai_event_bus.emit(
+        flow,
+        BridgedStateSnapshotEvent(
+            type=EventType.STATE_SNAPSHOT,
+            snapshot=state
+        )
+    )
+
+    await yield_control()
+
+    return True
 
 async def copilotkit_stream(response):
     """
@@ -92,7 +195,7 @@ async def _copilotkit_stream_custom_stream_wrapper(response: CustomStreamWrapper
                 )
             )
             # yield control to the event loop
-            await _yield_control()
+            await yield_control()
 
         # Stream tool calls
         tool_calls = chunk["choices"][0]["delta"]["tool_calls"] or None
@@ -122,7 +225,7 @@ async def _copilotkit_stream_custom_stream_wrapper(response: CustomStreamWrapper
                 )
             )
             # yield control to the event loop
-            await _yield_control()
+            await yield_control()
 
         # Stream finish reason
         finish_reason = chunk["choices"][0]["finish_reason"]
@@ -185,6 +288,12 @@ def litellm_messages_to_ag_ui_messages(messages: List[LiteLLMMessage]) -> List[M
             message_dict["id"] = str(uuid.uuid4())
         # remove all None values
         message_dict = {k: v for k, v in message_dict.items() if v is not None}
+
+        if "tool_calls" in message_dict:
+            for tool_call in message_dict["tool_calls"]:
+                if "type" not in tool_call:
+                    tool_call["type"] = "function"
+
         ag_ui_message = message_adapter.validate_python(message_dict)
         ag_ui_messages.append(ag_ui_message)
 

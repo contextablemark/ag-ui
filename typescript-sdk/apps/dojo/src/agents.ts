@@ -146,6 +146,15 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
         tool_based_generative_ui: new CrewAIAgent({
           url: "http://localhost:8000/tool_based_generative_ui",
         }),
+        agentic_generative_ui: new CrewAIAgent({
+          url: "http://localhost:8000/agentic_generative_ui",
+        }),
+        shared_state: new CrewAIAgent({
+          url: "http://localhost:8000/shared_state",
+        }),
+        predictive_state_updates: new CrewAIAgent({
+          url: "http://localhost:8000/predictive_state_updates",
+        }),
       };
     },
   },

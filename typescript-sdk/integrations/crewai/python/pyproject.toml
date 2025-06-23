@@ -4,6 +4,10 @@ version = "0.1.0"
 description = ""
 authors = ["Markus Ecker <markus.ecker@gmail.com>"]
 readme = "README.md"
+exclude = [
+    "agui_crewai/dojo.py",
+    "agui_crewai/examples/**",
+]
 
 [tool.poetry.dependencies]
 python = "<3.14,>=3.10"

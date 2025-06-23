@@ -31,16 +31,22 @@ from ag_ui.core.events import (
   StepStartedEvent,
   StepFinishedEvent,
   MessagesSnapshotEvent,
-  StateSnapshotEvent
+  StateSnapshotEvent,
+  CustomEvent,
 )
 from ag_ui.encoder import EventEncoder
 
-from .events import BridgedTextMessageChunkEvent, BridgedToolCallChunkEvent
+from .events import (
+  BridgedTextMessageChunkEvent,
+  BridgedToolCallChunkEvent,
+  BridgedCustomEvent,
+  BridgedStateSnapshotEvent
+)
 from .context import flow_context
 from .sdk import litellm_messages_to_ag_ui_messages
 
 
-def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
+def add_crewai_fastapi_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
     """Adds a CrewAI endpoint to the FastAPI app."""
 
     @app.post(path)
@@ -101,16 +107,18 @@ def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
                     @crewai_event_bus.on(MethodExecutionFinishedEvent)
                     def _(source, event):
                         if source == flow:
+                            messages = litellm_messages_to_ag_ui_messages(source.state.messages)
+
                             queue.put_nowait(
                                 MessagesSnapshotEvent(
                                     type=EventType.MESSAGES_SNAPSHOT,
-                                    messages=litellm_messages_to_ag_ui_messages(source.state.messages)
+                                    messages=messages
                                 )
                             )
                             queue.put_nowait(
                                 StateSnapshotEvent(
                                     type=EventType.STATE_SNAPSHOT,
-                                    state=source.state
+                                    snapshot=source.state
                                 )
                             )
                             queue.put_nowait(
@@ -141,6 +149,27 @@ def add_crewai_endpoint(app: FastAPI, flow_class: type[Flow], path: str = "/"):
                                     tool_call_id=event.tool_call_id,
                                     tool_call_name=event.tool_call_name,
                                     delta=event.delta,
+                                )
+                            )
+
+                    @crewai_event_bus.on(BridgedCustomEvent)
+                    def _(source, event):
+                        if source == flow:
+                            queue.put_nowait(
+                                CustomEvent(
+                                    type=EventType.CUSTOM,
+                                    name=event.name,
+                                    value=event.value
+                                )
+                            )
+
+                    @crewai_event_bus.on(BridgedStateSnapshotEvent)
+                    def _(source, event):
+                        if source == flow:
+                            queue.put_nowait(
+                                StateSnapshotEvent(
+                                    type=EventType.STATE_SNAPSHOT,
+                                    snapshot=event.snapshot
                                 )
                             )
 
