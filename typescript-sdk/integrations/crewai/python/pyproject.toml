@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ag-ui-crewai"
-version = "0.1.3"
-description = ""
+version = "0.1.4a1"
+description = "CrewAI integration for Agentic UI"
 authors = ["Markus Ecker <markus.ecker@gmail.com>"]
 readme = "README.md"
 exclude = [
