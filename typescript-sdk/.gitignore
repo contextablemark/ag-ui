@@ -38,7 +38,7 @@ yarn-error.log*
 *.pem
 
 # Generated files
-# packages/proto/src/generated
+packages/proto/src/generated
 
 # LangGraph API
 **/**/.langgraph_api
