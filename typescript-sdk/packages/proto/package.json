@@ -10,12 +10,14 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "prebuild": "npm run check-proto",
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "test": "jest",
     "generate": "mkdir -p ./src/generated && ./node_modules/.bin/grpc_tools_node_protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated --ts_proto_opt=esModuleInterop=true,outputJsonMethods=false,outputClientImpl=false -I ./src/proto ./src/proto/*.proto",
+    "check-proto": "node -e \"const fs=require('fs');const path=require('path');const protoDir='./src/proto';const genDir='./src/generated';if(!fs.existsSync(genDir)){console.log('Generated files missing, run: pnpm run generate');process.exit(1);}const protoFiles=fs.readdirSync(protoDir).filter(f=>f.endsWith('.proto'));const genFiles=fs.readdirSync(genDir).filter(f=>f.endsWith('.ts'));const protoMtime=Math.max(...protoFiles.map(f=>fs.statSync(path.join(protoDir,f)).mtime.getTime()));const genMtime=Math.min(...genFiles.map(f=>fs.statSync(path.join(genDir,f)).mtime.getTime()));if(protoMtime>genMtime){console.log('Proto files newer than generated files, run: pnpm run generate');process.exit(1);}\"",
     "link:global": "pnpm link --global",
     "unlink:global": "pnpm unlink --global"
   },

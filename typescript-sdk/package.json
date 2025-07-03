@@ -13,7 +13,8 @@
     "bump": "pnpm --filter './packages/*' exec -- pnpm version",
     "bump:alpha": "pnpm --filter './packages/*' exec -- pnpm version --preid alpha",
     "publish": "pnpm -r clean && pnpm install && turbo run build && pnpm publish -r --filter='./packages/*'",
-    "publish:alpha": "pnpm -r clean && pnpm install && turbo run build && pnpm publish -r --no-git-checks --filter='./packages/*' --tag alpha"
+    "publish:alpha": "pnpm -r clean && pnpm install && turbo run build && pnpm publish -r --no-git-checks --filter='./packages/*' --tag alpha",
+    "generate:proto": "pnpm --filter @ag-ui/proto run generate"
   },
   "devDependencies": {
     "prettier": "^3.5.3",
