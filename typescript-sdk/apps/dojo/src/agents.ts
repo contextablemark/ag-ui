@@ -10,6 +10,7 @@ import { LangGraphAgent } from "@ag-ui/langgraph";
 import { AgnoAgent } from "@ag-ui/agno";
 import { LlamaIndexAgent } from "@ag-ui/llamaindex";
 import { CrewAIAgent } from "@ag-ui/crewai";
+import { A2AClientAgent } from "@ag-ui/a2a";
 
 export const agentsIntegrations: AgentIntegrationConfig[] = [
   {
@@ -154,6 +155,17 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
         }),
         predictive_state_updates: new CrewAIAgent({
           url: "http://localhost:8000/predictive_state_updates",
+        }),
+      };
+    },
+  },
+  {
+    id: "a2a",
+    agents: async () => {
+      return {
+        agentic_chat: new A2AClientAgent({
+          model: openai("gpt-4o", { parallelToolCalls: false }),
+          agentUrls: ["http://127.0.0.1:9999"],
         }),
       };
     },

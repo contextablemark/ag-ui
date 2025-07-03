@@ -67,4 +67,9 @@ export const menuIntegrations: MenuIntegrationConfig[] = [
       "predictive_state_updates",
     ],
   },
+  {
+    id: "a2a",
+    name: "A2A",
+    features: ["agentic_chat"],
+  },
 ];
