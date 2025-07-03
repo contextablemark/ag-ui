@@ -1,17 +1,21 @@
 import { A2AClient, AgentCard, SendMessageResponse, SendMessageSuccessResponse } from "@a2a-js/sdk";
-import { Message, RunAgentInput } from "@ag-ui/client";
-import { CoreMessage, LanguageModel, streamText } from "ai";
+import { BaseEvent, EventType, Message, RunAgentInput, TextMessageChunkEvent } from "@ag-ui/client";
+import { CoreMessage, LanguageModel, processDataStream, streamText, ToolSet } from "ai";
 import { tool, generateText } from "ai";
 import { z } from "zod";
 
-const createSystemPrompt = (agentCards: AgentCard[], additionalInstructions?: string) => `
+export const createSystemPrompt = (agentCards: AgentCard[], additionalInstructions?: string) => `
 **Role:** You are an expert Routing Delegator. Your primary function is to accurately delegate user inquiries to the appropriate specialized remote agents.
+
+**Instructions:** 
+YOU MUST NOT literally repeat what the agent responds unless asked to do so. Add context, summarize the conversation, and add your own thoughts.
+YOU MUST engage in multi-turn conversations with the agents. NEVER ask the user for permission to engage multiple times with the same agent.
 
 ${additionalInstructions ? `**Additional Instructions:**\n${additionalInstructions}` : ""}
 
 **Core Directives:**
 
-* **Task Delegation:** Utilize the \`send_message\` function to assign actionable tasks to remote agents.
+* **Task Delegation:** Utilize the \`sendMessage\` function to assign actionable tasks to remote agents.
 * **Contextual Awareness for Remote Agents:** If a remote agent repeatedly requests user confirmation, assume it lacks access to the full conversation history. In such cases, enrich the task description with all necessary contextual information relevant to that specific agent.
 * **Autonomous Agent Engagement:** Never seek user permission before engaging with remote agents. If multiple agents are required to fulfill a request, connect with them directly without requesting user preference or confirmation.
 * **Transparent Communication:** Always present the complete and detailed response from the remote agent to the user.
@@ -27,82 +31,6 @@ ${additionalInstructions ? `**Additional Instructions:**\n${additionalInstructio
 * Available Agents: 
 ${JSON.stringify(agentCards.map((agent) => ({ name: agent.name, description: agent.description })))}
 `;
-
-interface RouterParams {
-  agentClients: A2AClient[];
-  additionalInstructions?: string;
-  input: RunAgentInput;
-  model: LanguageModel;
-}
-
-export async function router({ agentClients, additionalInstructions, input, model }: RouterParams) {
-  const agentCards = await Promise.all(agentClients.map((client) => client.getAgentCard()));
-
-  const agents = Object.fromEntries(
-    agentCards.map((card, index) => [card.name, { client: agentClients[index], card }]),
-  );
-
-  const systemPrompt = createSystemPrompt(agentCards, additionalInstructions);
-  const messages = convertMessagesToVercelAISDKMessages(input.messages);
-  if (messages.length && messages[0].role === "system") {
-    // remove the first message if it is a system message
-    messages.shift();
-  }
-
-  messages.unshift({
-    role: "system",
-    content: systemPrompt,
-  });
-
-  const sendMessageTool = tool({
-    description:
-      "Sends a task to the agent named `agentName`, including the full conversation context and goal.",
-    parameters: z.object({
-      agentName: z.string().describe("The name of the agent to send the task to."),
-      task: z
-        .string()
-        .describe(
-          "The comprehensive conversation-context summary and goal " +
-            "to be achieved regarding the user inquiry.",
-        ),
-    }),
-    async execute({ agentName, task }) {
-      if (!Object.keys(agents).includes(agentName)) {
-        return `Agent "${agentName}" not found.`;
-      }
-      const { client } = agents[agentName];
-      const sendResponse: SendMessageResponse = await client.sendMessage({
-        message: {
-          kind: "message",
-          messageId: Date.now().toString(),
-          role: "agent",
-          parts: [{ text: task, kind: "text" }],
-        },
-      });
-
-      if ("error" in sendResponse) {
-        console.error(sendResponse.error);
-        return `Error sending message to agent "${agentName}": ${sendResponse.error.message}`;
-      }
-      const result = (sendResponse as SendMessageSuccessResponse).result;
-
-      return "The agent responded: " + JSON.stringify(result);
-    },
-  });
-
-  const { textStream } = streamText({
-    model,
-    messages,
-    tools: {
-      sendMessage: sendMessageTool,
-    },
-    maxSteps: 10,
-  });
-
-  for await (const chunk of textStream) {
-    console.log(chunk);
-  }
-}
 
 export function convertMessagesToVercelAISDKMessages(messages: Message[]): CoreMessage[] {
   const result: CoreMessage[] = [];
@@ -154,4 +82,50 @@ export function convertMessagesToVercelAISDKMessages(messages: Message[]): CoreM
   }
 
   return result;
+}
+
+export function convertJsonSchemaToZodSchema(jsonSchema: any, required: boolean): z.ZodSchema {
+  if (jsonSchema.type === "object") {
+    const spec: { [key: string]: z.ZodSchema } = {};
+
+    if (!jsonSchema.properties || !Object.keys(jsonSchema.properties).length) {
+      return !required ? z.object(spec).optional() : z.object(spec);
+    }
+
+    for (const [key, value] of Object.entries(jsonSchema.properties)) {
+      spec[key] = convertJsonSchemaToZodSchema(
+        value,
+        jsonSchema.required ? jsonSchema.required.includes(key) : false,
+      );
+    }
+    let schema = z.object(spec).describe(jsonSchema.description);
+    return required ? schema : schema.optional();
+  } else if (jsonSchema.type === "string") {
+    let schema = z.string().describe(jsonSchema.description);
+    return required ? schema : schema.optional();
+  } else if (jsonSchema.type === "number") {
+    let schema = z.number().describe(jsonSchema.description);
+    return required ? schema : schema.optional();
+  } else if (jsonSchema.type === "boolean") {
+    let schema = z.boolean().describe(jsonSchema.description);
+    return required ? schema : schema.optional();
+  } else if (jsonSchema.type === "array") {
+    let itemSchema = convertJsonSchemaToZodSchema(jsonSchema.items, true);
+    let schema = z.array(itemSchema).describe(jsonSchema.description);
+    return required ? schema : schema.optional();
+  }
+  throw new Error("Invalid JSON schema");
+}
+
+export function convertToolToVercelAISDKTools(tools: RunAgentInput["tools"]): ToolSet {
+  return tools.reduce(
+    (acc: ToolSet, t: RunAgentInput["tools"][number]) => ({
+      ...acc,
+      [t.name]: tool({
+        description: t.description,
+        parameters: convertJsonSchemaToZodSchema(t.parameters, true),
+      }),
+    }),
+    {},
+  );
 }

@@ -70,6 +70,6 @@ export const menuIntegrations: MenuIntegrationConfig[] = [
   {
     id: "a2a",
     name: "A2A",
-    features: ["agentic_chat"],
+    features: ["a2a_chat"],
   },
 ];

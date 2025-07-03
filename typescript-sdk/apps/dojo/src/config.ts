@@ -53,6 +53,12 @@ export const featureConfig: FeatureConfig[] = [
     description: "Use collaboration to edit a document in real time with your Copilot",
     tags: ["State", "Streaming", "Tools"],
   }),
+  createFeatureConfig({
+    id: "a2a_chat",
+    name: "A2A Chat",
+    description: "Chat with your Copilot and call frontend tools",
+    tags: ["Chat", "Tools", "Streaming"],
+  }),
 ];
 
 export default featureConfig;

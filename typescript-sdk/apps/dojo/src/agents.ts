@@ -163,7 +163,7 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
     id: "a2a",
     agents: async () => {
       return {
-        agentic_chat: new A2AClientAgent({
+        a2a_chat: new A2AClientAgent({
           model: openai("gpt-4o", { parallelToolCalls: false }),
           agentUrls: ["http://127.0.0.1:9999"],
         }),
