@@ -488,6 +488,7 @@ export const defaultApplyEvents = (
                 state,
                 agent,
                 input,
+                result: (event as RunFinishedEvent).result,
               }),
           );
           applyMutation(mutation);

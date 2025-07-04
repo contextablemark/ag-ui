@@ -56,7 +56,16 @@ export abstract class AbstractAgent {
   ): Promise<void> {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
-    const subscribers = [...this.subscribers, subscriber ?? {}];
+    let result: any = undefined;
+    const subscribers: RunAgentSubscriber[] = [
+      {
+        onRunFinishedEvent: (params) => {
+          result = params.result;
+        },
+      },
+      ...this.subscribers,
+      subscriber ?? {},
+    ];
 
     await this.onInitialize(input, subscribers);
 
@@ -74,7 +83,7 @@ export abstract class AbstractAgent {
       }),
     );
 
-    return lastValueFrom(pipeline(of(null))).then(() => {});
+    return lastValueFrom(pipeline(of(null))).then(() => result);
   }
 
   public abortRun() {}
