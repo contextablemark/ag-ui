@@ -19,8 +19,10 @@ import {
   ToolCallStartEvent,
   MessagesSnapshotEvent,
   RawEvent,
+  CustomEvent,
 } from "@ag-ui/core";
 import { AbstractAgent } from "./agent";
+import { structuredClone_ } from "@/utils";
 
 export interface AgentStateMutation {
   messages?: Message[];
@@ -35,56 +37,63 @@ export interface RunAgentSubscriberParams {
   input: RunAgentInput;
 }
 
+// TODO make shit async
 export interface RunAgentSubscriber {
-  // Lifecycle
-  onInitializeRun(params: RunAgentSubscriberParams): AgentStateMutation | undefined;
-  onError(params: { error: Error } & RunAgentSubscriberParams): AgentStateMutation | undefined;
-  onFinalizeRun(params: RunAgentSubscriberParams): AgentStateMutation | undefined;
+  // Request lifecycle
+  onRunInitialized?(
+    params: RunAgentSubscriberParams,
+  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
+  onRunFailed?(
+    params: { error: Error } & RunAgentSubscriberParams,
+  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
+  onRunFinalized?(
+    params: RunAgentSubscriberParams,
+  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
 
   // Events
-  onEvent(params: { event: BaseEvent } & RunAgentSubscriberParams): AgentStateMutation | undefined;
+  onEvent?(params: { event: BaseEvent } & RunAgentSubscriberParams): AgentStateMutation | undefined;
 
-  onRunStartedEvent(
+  onRunStartedEvent?(
     params: { event: RunStartedEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onRunFinishedEvent(
+  onRunFinishedEvent?(
     params: { event: RunFinishedEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onRunErrorEvent(
+  onRunErrorEvent?(
     params: { event: RunErrorEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onStepStartedEvent(
+  onStepStartedEvent?(
     params: { event: StepStartedEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onStepFinishedEvent(
+  onStepFinishedEvent?(
     params: { event: StepFinishedEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onTextMessageStartEvent(
+  onTextMessageStartEvent?(
     params: { event: TextMessageStartEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onTextMessageContentEvent(
+  onTextMessageContentEvent?(
     params: {
       event: TextMessageContentEvent;
       textMessageBuffer: string;
     } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onTextMessageEndEvent(
+  onTextMessageEndEvent?(
     params: { event: TextMessageEndEvent; textMessageBuffer: string } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onToolCallStartEvent(
+  onToolCallStartEvent?(
     params: { event: ToolCallStartEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onToolCallArgsEvent(
+  onToolCallArgsEvent?(
     params: {
       event: ToolCallArgsEvent;
       toolCallBuffer: string;
       toolCallName: string;
     } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
-  onToolCallEndEvent(
+  onToolCallEndEvent?(
     params: {
       event: ToolCallEndEvent;
       toolCallBuffer: string;
@@ -92,31 +101,77 @@ export interface RunAgentSubscriber {
     } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onToolCallResultEvent(
+  onToolCallResultEvent?(
     params: { event: ToolCallResultEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onStateSnapshotEvent(
+  onStateSnapshotEvent?(
     params: { event: StateSnapshotEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onStateDeltaEvent(
-    params: { event: StateDeltaEvent; previousState: State } & RunAgentSubscriberParams,
+  onStateDeltaEvent?(
+    params: { event: StateDeltaEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onMessagesSnapshotEvent(
+  onMessagesSnapshotEvent?(
     params: { event: MessagesSnapshotEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onRawEvent(
+  onRawEvent?(
     params: { event: RawEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
-  onCustomEvent(
+  onCustomEvent?(
     params: { event: CustomEvent } & RunAgentSubscriberParams,
   ): AgentStateMutation | undefined;
 
   // State changes
-  onMessagesChanged(params: { messages: Message[] } & RunAgentSubscriberParams): void;
-  onStateChanged(params: { state: State } & RunAgentSubscriberParams): void;
+  onMessagesChanged?(params: Omit<RunAgentSubscriberParams, "state">): void;
+  onStateChanged?(params: Omit<RunAgentSubscriberParams, "messages">): void;
+}
+
+export function runSubscribersWithMutation(
+  subscribers: RunAgentSubscriber[],
+  initialMessages: Message[],
+  initialState: State,
+  executor: (
+    subscriber: RunAgentSubscriber,
+    messages: Message[],
+    state: State,
+  ) => AgentStateMutation | undefined,
+): AgentStateMutation {
+  let messages: Message[] = initialMessages;
+  let state: State = initialState;
+
+  let stopPropagation = undefined;
+
+  for (const subscriber of subscribers) {
+    const mutation = executor(subscriber, structuredClone_(messages), structuredClone_(state));
+
+    if (mutation === undefined) {
+      // Nothing returned – keep going
+      continue;
+    }
+
+    // Merge messages/state so next subscriber sees latest view
+    if (mutation.messages !== undefined) {
+      messages = mutation.messages;
+    }
+
+    if (mutation.state !== undefined) {
+      state = mutation.state;
+    }
+
+    stopPropagation = mutation.stopPropagation;
+
+    if (stopPropagation === true) {
+      break;
+    }
+  }
+
+  return {
+    ...(JSON.stringify(messages) !== JSON.stringify(initialMessages) ? { messages } : {}),
+    ...(JSON.stringify(state) !== JSON.stringify(initialState) ? { state } : {}),
+    ...(stopPropagation !== undefined ? { stopPropagation } : {}),
+  };
 }

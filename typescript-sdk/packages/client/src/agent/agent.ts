@@ -12,7 +12,7 @@ import { convertToLegacyEvents } from "@/legacy/convert";
 import { LegacyRuntimeProtocolEvent } from "@/legacy/types";
 import { lastValueFrom, of } from "rxjs";
 import { transformChunks } from "@/chunks";
-import { AgentStateMutation, RunAgentSubscriber } from "./subscriber";
+import { AgentStateMutation, RunAgentSubscriber, runSubscribersWithMutation } from "./subscriber";
 
 export abstract class AbstractAgent {
   public agentId?: string;
@@ -50,22 +50,27 @@ export abstract class AbstractAgent {
 
   protected abstract run(input: RunAgentInput): Observable<BaseEvent>;
 
-  public async runAgent(parameters?: RunAgentParameters): Promise<void> {
+  public async runAgent(
+    parameters?: RunAgentParameters,
+    subscriber?: RunAgentSubscriber,
+  ): Promise<void> {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
+    const subscribers = [...this.subscribers, subscriber ?? {}];
+
+    this.onInitialize(input, subscribers);
 
     const pipeline = pipe(
       () => this.run(input),
       transformChunks(this.debug),
       verifyEvents(this.debug),
-      (source$) => this.apply(input, source$),
-      (source$) => this.processApplyEvents(input, source$),
+      (source$) => this.apply(input, source$, subscribers),
+      (source$) => this.processApplyEvents(input, source$, subscribers),
       catchError((error) => {
-        this.onError(error);
-        return throwError(() => error);
+        return this.onError(input, error, subscribers);
       }),
       finalize(() => {
-        this.onFinalize();
+        this.onFinalize(input, subscribers);
       }),
     );
 
@@ -77,21 +82,37 @@ export abstract class AbstractAgent {
   protected apply(
     input: RunAgentInput,
     events$: Observable<BaseEvent>,
+    subscribers: RunAgentSubscriber[],
   ): Observable<AgentStateMutation> {
-    return defaultApplyEvents(input, events$);
+    return defaultApplyEvents(input, events$, this, subscribers);
   }
 
   protected processApplyEvents(
     input: RunAgentInput,
     events$: Observable<AgentStateMutation>,
+    subscribers: RunAgentSubscriber[],
   ): Observable<AgentStateMutation> {
     return events$.pipe(
       tap((event) => {
         if (event.messages) {
           this.messages = event.messages;
+          subscribers.forEach((subscriber) => {
+            subscriber.onMessagesChanged?.({
+              messages: this.messages,
+              agent: this,
+              input,
+            });
+          });
         }
         if (event.state) {
           this.state = event.state;
+          subscribers.forEach((subscriber) => {
+            subscriber.onStateChanged?.({
+              state: this.state,
+              agent: this,
+              input,
+            });
+          });
         }
       }),
     );
@@ -109,11 +130,117 @@ export abstract class AbstractAgent {
     };
   }
 
-  protected onError(error: Error) {
-    console.error("Agent execution failed:", error);
+  protected onInitialize(input: RunAgentInput, subscribers: RunAgentSubscriber[]) {
+    const onRunInitializedMutation = runSubscribersWithMutation(
+      subscribers,
+      this.messages,
+      this.state,
+      (subscriber, messages, state) =>
+        subscriber.onRunInitialized?.({ messages, state, agent: this, input }),
+    );
+    if (
+      onRunInitializedMutation.messages !== undefined ||
+      onRunInitializedMutation.state !== undefined
+    ) {
+      if (onRunInitializedMutation.messages) {
+        this.messages = onRunInitializedMutation.messages;
+        input.messages = onRunInitializedMutation.messages;
+        subscribers.forEach((subscriber) => {
+          subscriber.onMessagesChanged?.({
+            messages: this.messages,
+            agent: this,
+            input,
+          });
+        });
+      }
+      if (onRunInitializedMutation.state) {
+        this.state = onRunInitializedMutation.state;
+        input.state = onRunInitializedMutation.state;
+        subscribers.forEach((subscriber) => {
+          subscriber.onStateChanged?.({
+            state: this.state,
+            agent: this,
+            input,
+          });
+        });
+      }
+    }
   }
 
-  protected onFinalize() {}
+  protected onError(input: RunAgentInput, error: Error, subscribers: RunAgentSubscriber[]) {
+    const onRunFailedMutation = runSubscribersWithMutation(
+      subscribers,
+      this.messages,
+      this.state,
+      (subscriber, messages, state) =>
+        subscriber.onRunFailed?.({ error, messages, state, agent: this, input }),
+    );
+
+    if (onRunFailedMutation.messages !== undefined || onRunFailedMutation.state !== undefined) {
+      if (onRunFailedMutation.messages !== undefined) {
+        this.messages = onRunFailedMutation.messages;
+        subscribers.forEach((subscriber) => {
+          subscriber.onMessagesChanged?.({
+            messages: this.messages,
+            agent: this,
+            input,
+          });
+        });
+      }
+      if (onRunFailedMutation.state !== undefined) {
+        this.state = onRunFailedMutation.state;
+        subscribers.forEach((subscriber) => {
+          subscriber.onStateChanged?.({
+            state: this.state,
+            agent: this,
+            input,
+          });
+        });
+      }
+    }
+    if (onRunFailedMutation.stopPropagation !== true) {
+      console.error("Agent execution failed:", error);
+      return throwError(() => error);
+    } else {
+      return of(null);
+    }
+  }
+
+  protected onFinalize(input: RunAgentInput, subscribers: RunAgentSubscriber[]) {
+    const onRunFinalizedMutation = runSubscribersWithMutation(
+      subscribers,
+      this.messages,
+      this.state,
+      (subscriber, messages, state) =>
+        subscriber.onRunFinalized?.({ messages, state, agent: this, input }),
+    );
+
+    if (
+      onRunFinalizedMutation.messages !== undefined ||
+      onRunFinalizedMutation.state !== undefined
+    ) {
+      if (onRunFinalizedMutation.messages !== undefined) {
+        this.messages = onRunFinalizedMutation.messages;
+        subscribers.forEach((subscriber) => {
+          subscriber.onMessagesChanged?.({
+            messages: this.messages,
+            agent: this,
+            input,
+          });
+        });
+      }
+      if (onRunFinalizedMutation.state !== undefined) {
+        this.state = onRunFinalizedMutation.state;
+        subscribers.forEach((subscriber) => {
+          subscriber.onStateChanged?.({
+            state: this.state,
+            agent: this,
+            input,
+          });
+        });
+      }
+    }
+  }
 
   public clone() {
     const cloned = Object.create(Object.getPrototypeOf(this));
