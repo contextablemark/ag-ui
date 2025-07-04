@@ -1,5 +1,5 @@
 import { defaultApplyEvents } from "@/apply/default";
-import { Message, State, RunAgentInput, RunAgent, BaseEvent, AgentState } from "@ag-ui/core";
+import { Message, State, RunAgentInput, BaseEvent } from "@ag-ui/core";
 
 import { AgentConfig, RunAgentParameters } from "./types";
 import { v4 as uuidv4 } from "uuid";
@@ -12,7 +12,7 @@ import { convertToLegacyEvents } from "@/legacy/convert";
 import { LegacyRuntimeProtocolEvent } from "@/legacy/types";
 import { lastValueFrom, of } from "rxjs";
 import { transformChunks } from "@/chunks";
-import { RunAgentSubscriber } from "./subscriber";
+import { AgentStateMutation, RunAgentSubscriber } from "./subscriber";
 
 export abstract class AbstractAgent {
   public agentId?: string;
@@ -48,7 +48,7 @@ export abstract class AbstractAgent {
     };
   }
 
-  protected abstract run(...args: Parameters<RunAgent>): ReturnType<RunAgent>;
+  protected abstract run(input: RunAgentInput): Observable<BaseEvent>;
 
   public async runAgent(parameters?: RunAgentParameters): Promise<void> {
     this.agentId = this.agentId ?? uuidv4();
@@ -74,14 +74,17 @@ export abstract class AbstractAgent {
 
   public abortRun() {}
 
-  protected apply(input: RunAgentInput, events$: Observable<BaseEvent>): Observable<AgentState> {
+  protected apply(
+    input: RunAgentInput,
+    events$: Observable<BaseEvent>,
+  ): Observable<AgentStateMutation> {
     return defaultApplyEvents(input, events$);
   }
 
   protected processApplyEvents(
     input: RunAgentInput,
-    events$: Observable<AgentState>,
-  ): Observable<AgentState> {
+    events$: Observable<AgentStateMutation>,
+  ): Observable<AgentStateMutation> {
     return events$.pipe(
       tap((event) => {
         if (event.messages) {

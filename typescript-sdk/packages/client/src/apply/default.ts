@@ -19,7 +19,7 @@ import { mergeMap } from "rxjs/operators";
 import { structuredClone_ } from "../utils";
 import { applyPatch } from "fast-json-patch";
 import untruncateJson from "untruncate-json";
-import { AgentState } from "@ag-ui/core";
+import { AgentStateMutation } from "@/agent/subscriber";
 import { Observable } from "rxjs";
 
 interface PredictStateValue {
@@ -31,13 +31,13 @@ interface PredictStateValue {
 export const defaultApplyEvents = (
   input: RunAgentInput,
   events$: Observable<BaseEvent>,
-): Observable<AgentState> => {
+): Observable<AgentStateMutation> => {
   let messages = structuredClone_(input.messages);
   let state = structuredClone_(input.state);
   let predictState: PredictStateValue[] | undefined;
 
   // Helper function to emit state updates with proper cloning
-  const emitUpdate = (agentState: AgentState) => [structuredClone_(agentState)];
+  const emitUpdate = (agentState: AgentStateMutation) => [structuredClone_(agentState)];
 
   const emitNoUpdate = () => [];
 
