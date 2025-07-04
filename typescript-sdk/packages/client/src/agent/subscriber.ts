@@ -37,100 +37,104 @@ export interface RunAgentSubscriberParams {
   input: RunAgentInput;
 }
 
-// TODO make shit async
+// Utility type to allow callbacks to be implemented either synchronously or asynchronously.
+export type MaybePromise<T> = T | Promise<T>;
+
 export interface RunAgentSubscriber {
   // Request lifecycle
   onRunInitialized?(
     params: RunAgentSubscriberParams,
-  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
+  ): MaybePromise<Omit<AgentStateMutation, "stopPropagation"> | undefined>;
   onRunFailed?(
     params: { error: Error } & RunAgentSubscriberParams,
-  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
+  ): MaybePromise<Omit<AgentStateMutation, "stopPropagation"> | undefined>;
   onRunFinalized?(
     params: RunAgentSubscriberParams,
-  ): Omit<AgentStateMutation, "stopPropagation"> | undefined;
+  ): MaybePromise<Omit<AgentStateMutation, "stopPropagation"> | undefined>;
 
   // Events
-  onEvent?(params: { event: BaseEvent } & RunAgentSubscriberParams): AgentStateMutation | undefined;
+  onEvent?(
+    params: { event: BaseEvent } & RunAgentSubscriberParams,
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onRunStartedEvent?(
     params: { event: RunStartedEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onRunFinishedEvent?(
     params: { event: RunFinishedEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onRunErrorEvent?(
     params: { event: RunErrorEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onStepStartedEvent?(
     params: { event: StepStartedEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onStepFinishedEvent?(
     params: { event: StepFinishedEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onTextMessageStartEvent?(
     params: { event: TextMessageStartEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onTextMessageContentEvent?(
     params: {
       event: TextMessageContentEvent;
       textMessageBuffer: string;
     } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onTextMessageEndEvent?(
     params: { event: TextMessageEndEvent; textMessageBuffer: string } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onToolCallStartEvent?(
     params: { event: ToolCallStartEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onToolCallArgsEvent?(
     params: {
       event: ToolCallArgsEvent;
       toolCallBuffer: string;
       toolCallName: string;
     } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
   onToolCallEndEvent?(
     params: {
       event: ToolCallEndEvent;
       toolCallBuffer: string;
       toolCallName: string;
     } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onToolCallResultEvent?(
     params: { event: ToolCallResultEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onStateSnapshotEvent?(
     params: { event: StateSnapshotEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onStateDeltaEvent?(
     params: { event: StateDeltaEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onMessagesSnapshotEvent?(
     params: { event: MessagesSnapshotEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onRawEvent?(
     params: { event: RawEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   onCustomEvent?(
     params: { event: CustomEvent } & RunAgentSubscriberParams,
-  ): AgentStateMutation | undefined;
+  ): MaybePromise<AgentStateMutation | undefined>;
 
   // State changes
-  onMessagesChanged?(params: Omit<RunAgentSubscriberParams, "state">): void;
-  onStateChanged?(params: Omit<RunAgentSubscriberParams, "messages">): void;
+  onMessagesChanged?(params: Omit<RunAgentSubscriberParams, "state">): MaybePromise<void>;
+  onStateChanged?(params: Omit<RunAgentSubscriberParams, "messages">): MaybePromise<void>;
 }
 
-export function runSubscribersWithMutation(
+export async function runSubscribersWithMutation(
   subscribers: RunAgentSubscriber[],
   initialMessages: Message[],
   initialState: State,
@@ -138,15 +142,19 @@ export function runSubscribersWithMutation(
     subscriber: RunAgentSubscriber,
     messages: Message[],
     state: State,
-  ) => AgentStateMutation | undefined,
-): AgentStateMutation {
+  ) => MaybePromise<AgentStateMutation | undefined>,
+): Promise<AgentStateMutation> {
   let messages: Message[] = initialMessages;
   let state: State = initialState;
 
-  let stopPropagation = undefined;
+  let stopPropagation: boolean | undefined = undefined;
 
   for (const subscriber of subscribers) {
-    const mutation = executor(subscriber, structuredClone_(messages), structuredClone_(state));
+    const mutation = await executor(
+      subscriber,
+      structuredClone_(messages),
+      structuredClone_(state),
+    );
 
     if (mutation === undefined) {
       // Nothing returned – keep going

@@ -23,7 +23,8 @@ import {
   StepStartedEvent,
   StepFinishedEvent,
 } from "@ag-ui/core";
-import { mergeMap } from "rxjs/operators";
+import { mergeMap, mergeAll } from "rxjs/operators";
+import { of, EMPTY } from "rxjs";
 import { structuredClone_ } from "../utils";
 import { applyPatch } from "fast-json-patch";
 import {
@@ -59,16 +60,16 @@ export const defaultApplyEvents = (
     const result = structuredClone_(currentMutation) as AgentStateMutation;
     currentMutation = {};
     if (result.messages !== undefined || result.state !== undefined) {
-      return [result];
+      return of(result);
     }
-    return [];
+    return EMPTY;
   };
 
   return events$.pipe(
-    mergeMap((event) => {
+    mergeMap(async (event) => {
       switch (event.type) {
         case EventType.TEXT_MESSAGE_START: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -101,7 +102,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TEXT_MESSAGE_CONTENT: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -130,7 +131,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TEXT_MESSAGE_END: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -150,7 +151,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TOOL_CALL_START: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -206,7 +207,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TOOL_CALL_ARGS: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -250,7 +251,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TOOL_CALL_END: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -278,7 +279,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TOOL_CALL_RESULT: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -313,7 +314,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.STATE_SNAPSHOT: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -341,7 +342,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.STATE_DELTA: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -379,7 +380,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.MESSAGES_SNAPSHOT: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -407,7 +408,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.RAW: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -426,7 +427,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.CUSTOM: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -445,7 +446,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.RUN_STARTED: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -464,7 +465,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.RUN_FINISHED: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -483,7 +484,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.RUN_ERROR: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -502,7 +503,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.STEP_STARTED: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -521,7 +522,7 @@ export const defaultApplyEvents = (
         }
 
         case EventType.STEP_FINISHED: {
-          const mutation = runSubscribersWithMutation(
+          const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
@@ -573,5 +574,6 @@ export const defaultApplyEvents = (
       const _exhaustiveCheck: never = event.type;
       return emitUpdates();
     }),
+    mergeAll(),
   );
 };
