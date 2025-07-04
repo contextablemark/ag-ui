@@ -1,5 +1,4 @@
 import {
-  ApplyEvents,
   EventType,
   TextMessageStartEvent,
   TextMessageContentEvent,
@@ -14,6 +13,7 @@ import {
   AssistantMessage,
   ToolCallResultEvent,
   ToolMessage,
+  RunAgentInput,
 } from "@ag-ui/core";
 import { mergeMap } from "rxjs/operators";
 import { structuredClone_ } from "../utils";
@@ -28,9 +28,10 @@ interface PredictStateValue {
   tool_argument: string;
 }
 
-export const defaultApplyEvents = (...args: Parameters<ApplyEvents>): ReturnType<ApplyEvents> => {
-  const [input, events$] = args;
-
+export const defaultApplyEvents = (
+  input: RunAgentInput,
+  events$: Observable<BaseEvent>,
+): Observable<AgentState> => {
   let messages = structuredClone_(input.messages);
   let state = structuredClone_(input.state);
   let predictState: PredictStateValue[] | undefined;

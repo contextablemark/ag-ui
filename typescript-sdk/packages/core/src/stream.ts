@@ -14,12 +14,3 @@ export interface AgentState {
   messages?: Message[];
   state?: State;
 }
-
-/**
- * Maps a stream of BaseEvent objects to a stream of AgentState objects.
- * @returns A function that transforms an Observable<BaseEvent> into an Observable<TransformedState>
- */
-export type ApplyEvents = (
-  input: RunAgentInput,
-  events$: Observable<BaseEvent>,
-) => Observable<AgentState>;

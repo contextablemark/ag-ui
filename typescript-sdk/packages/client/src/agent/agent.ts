@@ -1,5 +1,5 @@
 import { defaultApplyEvents } from "@/apply/default";
-import { Message, State, RunAgentInput, RunAgent, ApplyEvents, BaseEvent } from "@ag-ui/core";
+import { Message, State, RunAgentInput, RunAgent, BaseEvent, AgentState } from "@ag-ui/core";
 
 import { AgentConfig, RunAgentParameters } from "./types";
 import { v4 as uuidv4 } from "uuid";
@@ -12,6 +12,7 @@ import { convertToLegacyEvents } from "@/legacy/convert";
 import { LegacyRuntimeProtocolEvent } from "@/legacy/types";
 import { lastValueFrom, of } from "rxjs";
 import { transformChunks } from "@/chunks";
+import { RunAgentSubscriber } from "./subscriber";
 
 export abstract class AbstractAgent {
   public agentId?: string;
@@ -20,6 +21,7 @@ export abstract class AbstractAgent {
   public messages: Message[];
   public state: State;
   public debug: boolean = false;
+  public subscribers: RunAgentSubscriber[] = [];
 
   constructor({
     agentId,
@@ -35,6 +37,15 @@ export abstract class AbstractAgent {
     this.messages = structuredClone_(initialMessages ?? []);
     this.state = structuredClone_(initialState ?? {});
     this.debug = debug ?? false;
+  }
+
+  public subscribe(subscriber: RunAgentSubscriber) {
+    this.subscribers.push(subscriber);
+    return {
+      unsubscribe: () => {
+        this.subscribers = this.subscribers.filter((s) => s !== subscriber);
+      },
+    };
   }
 
   protected abstract run(...args: Parameters<RunAgent>): ReturnType<RunAgent>;
@@ -63,14 +74,14 @@ export abstract class AbstractAgent {
 
   public abortRun() {}
 
-  protected apply(...args: Parameters<ApplyEvents>): ReturnType<ApplyEvents> {
-    return defaultApplyEvents(...args);
+  protected apply(input: RunAgentInput, events$: Observable<BaseEvent>): Observable<AgentState> {
+    return defaultApplyEvents(input, events$);
   }
 
   protected processApplyEvents(
     input: RunAgentInput,
-    events$: ReturnType<ApplyEvents>,
-  ): ReturnType<ApplyEvents> {
+    events$: Observable<AgentState>,
+  ): Observable<AgentState> {
     return events$.pipe(
       tap((event) => {
         if (event.messages) {
