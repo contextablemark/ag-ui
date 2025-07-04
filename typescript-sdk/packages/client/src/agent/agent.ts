@@ -53,7 +53,7 @@ export abstract class AbstractAgent {
   public async runAgent(
     parameters?: RunAgentParameters,
     subscriber?: RunAgentSubscriber,
-  ): Promise<void> {
+  ): Promise<any> {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
     let result: any = undefined;
