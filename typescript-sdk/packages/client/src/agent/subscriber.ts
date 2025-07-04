@@ -95,13 +95,14 @@ export interface RunAgentSubscriber {
       event: ToolCallArgsEvent;
       toolCallBuffer: string;
       toolCallName: string;
+      partialToolCallArgs: Record<string, any>;
     } & RunAgentSubscriberParams,
   ): MaybePromise<AgentStateMutation | undefined>;
   onToolCallEndEvent?(
     params: {
       event: ToolCallEndEvent;
-      toolCallBuffer: string;
       toolCallName: string;
+      toolCallArgs: Record<string, any>;
     } & RunAgentSubscriberParams,
   ): MaybePromise<AgentStateMutation | undefined>;
 

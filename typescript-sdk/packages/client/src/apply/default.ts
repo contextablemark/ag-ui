@@ -34,6 +34,7 @@ import {
 } from "@/agent/subscriber";
 import { Observable } from "rxjs";
 import { AbstractAgent } from "@/agent/agent";
+import untruncateJson from "untruncate-json";
 
 export const defaultApplyEvents = (
   input: RunAgentInput,
@@ -218,6 +219,12 @@ export const defaultApplyEvents = (
                 toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.arguments : "";
               const toolCallName =
                 toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.name : "";
+              let partialToolCallArgs = {};
+              try {
+                partialToolCallArgs = untruncateJson(
+                  toolCallBuffer + (event as ToolCallArgsEvent).delta,
+                );
+              } catch (error) {}
 
               return subscriber.onToolCallArgsEvent?.({
                 event: event as ToolCallArgsEvent,
@@ -227,6 +234,7 @@ export const defaultApplyEvents = (
                 input,
                 toolCallBuffer,
                 toolCallName,
+                partialToolCallArgs,
               });
             },
           );
@@ -258,18 +266,22 @@ export const defaultApplyEvents = (
             (subscriber, messages, state) => {
               const toolCalls =
                 (messages[messages.length - 1] as AssistantMessage)?.toolCalls ?? [];
-              const toolCallBuffer =
+              const toolCallArgsString =
                 toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.arguments : "";
               const toolCallName =
                 toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.name : "";
+              let toolCallArgs = {};
+              try {
+                toolCallArgs = JSON.parse(toolCallArgsString);
+              } catch (error) {}
               return subscriber.onToolCallEndEvent?.({
                 event: event as ToolCallEndEvent,
                 messages,
                 state,
                 agent,
                 input,
-                toolCallBuffer,
                 toolCallName,
+                toolCallArgs,
               });
             },
           );
