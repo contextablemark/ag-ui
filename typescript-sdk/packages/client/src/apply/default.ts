@@ -273,6 +273,8 @@ export const defaultApplyEvents = (
             },
           );
           applyMutation(mutation);
+
+          return emitUpdates();
         }
 
         case EventType.TOOL_CALL_RESULT: {
