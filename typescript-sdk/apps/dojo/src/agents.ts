@@ -165,7 +165,15 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
       return {
         a2a_chat: new A2AClientAgent({
           model: openai("gpt-4o", { parallelToolCalls: false }),
-          agentUrls: ["http://127.0.0.1:9999"],
+          agentUrls: ["http://127.0.0.1:9999", "http://127.0.0.1:9998", "http://127.0.0.1:9997"],
+          instructions: `
+          You are an HR agent. You are responsible for hiring and firing employees.
+
+          It's very important to contact all the departments necessary to complete the task.
+          For example, to hire an employee, you must contact the Finance and IT departments and to find a table at buildings management.
+
+          After confirming a seat, you must communicate with the buildings management agent to book the table.
+          `,
         }),
       };
     },

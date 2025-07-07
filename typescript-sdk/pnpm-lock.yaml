@@ -28,16 +28,16 @@ importers:
         version: link:../../integrations/agno
       '@ag-ui/client':
         specifier: workspace:*
-        version: link:../../packages/client
+        version: 0.0.30
       '@ag-ui/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: 0.0.30
       '@ag-ui/crewai':
         specifier: workspace:*
         version: link:../../integrations/crewai
       '@ag-ui/encoder':
         specifier: workspace:*
-        version: link:../../packages/encoder
+        version: 0.0.30
       '@ag-ui/langgraph':
         specifier: workspace:*
         version: link:../../integrations/langgraph
@@ -52,7 +52,7 @@ importers:
         version: link:../../integrations/middleware-starter
       '@ag-ui/proto':
         specifier: workspace:*
-        version: link:../../packages/proto
+        version: 0.0.30
       '@ag-ui/server-starter':
         specifier: workspace:*
         version: link:../../integrations/server-starter
@@ -73,7 +73,7 @@ importers:
         version: 1.8.14-next.4(@types/react@19.1.5)(graphql@16.11.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@copilotkit/runtime':
         specifier: 1.8.14-next.4
-        version: 1.8.14-next.4(@ag-ui/client@packages+client)(@ag-ui/core@packages+core)(@ag-ui/encoder@packages+encoder)(@ag-ui/proto@packages+proto)(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.821.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.100.0(ws@8.18.2)(zod@3.25.17))(zod@3.25.17))(@ibm-cloud/watsonx-ai@1.6.6)(@smithy/eventstream-codec@1.1.0)(@smithy/protocol-http@5.1.2)(@smithy/signature-v4@5.1.2)(@smithy/util-utf8@4.0.0)(axios@1.9.0)(cohere-ai@7.17.1)(fast-xml-parser@4.4.1)(google-auth-library@8.9.0)(ibm-cloud-sdk-core@5.3.2)(ignore@7.0.4)(jsonwebtoken@9.0.2)(playwright@1.52.0)(react@19.1.0)(ws@8.18.2)
+        version: 1.8.14-next.4(@ag-ui/client@0.0.30)(@ag-ui/core@0.0.30)(@ag-ui/encoder@0.0.30)(@ag-ui/proto@0.0.30)(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.821.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.100.0(ws@8.18.2)(zod@3.25.17))(zod@3.25.17))(@ibm-cloud/watsonx-ai@1.6.6)(@smithy/eventstream-codec@1.1.0)(@smithy/protocol-http@5.1.2)(@smithy/signature-v4@5.1.2)(@smithy/util-utf8@4.0.0)(axios@1.9.0)(cohere-ai@7.17.1)(fast-xml-parser@4.4.1)(google-auth-library@8.9.0)(ibm-cloud-sdk-core@5.3.2)(ignore@7.0.4)(jsonwebtoken@9.0.2)(playwright@1.52.0)(react@19.1.0)(ws@8.18.2)
       '@copilotkit/runtime-client-gql':
         specifier: 1.8.14-next.4
         version: 1.8.14-next.4(graphql@16.11.0)(react@19.1.0)
@@ -176,6 +176,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.7)
+      untruncate-json:
+        specifier: ^0.0.1
+        version: 0.0.1
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
@@ -719,6 +722,9 @@ packages:
 
   '@ag-ui/client@0.0.27':
     resolution: {integrity: sha512-W7PX/C40dxeCdf/j9lSL6TI8IEpWct/Fn9JkZdX3zXFf5rPN+RpckRKhYTC0ZstMi909oTww7SHVsVm7exPReg==}
+
+  '@ag-ui/client@0.0.30':
+    resolution: {integrity: sha512-bWdd4DgniHa8mWBaVMVYvwKLAbwi+SBUCUGqnEH8z2lkHgjY5xZVekNq5g3x3i4OSJ6RVr4XDE+DAORgOh09qA==}
 
   '@ag-ui/core@0.0.27':
     resolution: {integrity: sha512-I8i0qsamIVaOhPZ11bz7a+JQ7DIwIhLCon2EYWHikgcLiWzfZNBJhlVBR6Fn29tv3Ost4p6wYWQy84WzAhjJ+Q==}
@@ -8407,6 +8413,18 @@ snapshots:
       uuid: 11.1.0
       zod: 3.25.17
 
+  '@ag-ui/client@0.0.30':
+    dependencies:
+      '@ag-ui/core': 0.0.30
+      '@ag-ui/encoder': 0.0.30
+      '@ag-ui/proto': 0.0.30
+      '@types/uuid': 10.0.0
+      fast-json-patch: 3.1.1
+      rxjs: 7.8.1
+      untruncate-json: 0.0.1
+      uuid: 11.1.0
+      zod: 3.25.17
+
   '@ag-ui/core@0.0.27':
     dependencies:
       rxjs: 7.8.1
@@ -9387,12 +9405,12 @@ snapshots:
       - ws
       - youtubei.js
 
-  '@copilotkit/runtime@1.8.14-next.4(@ag-ui/client@packages+client)(@ag-ui/core@packages+core)(@ag-ui/encoder@packages+encoder)(@ag-ui/proto@packages+proto)(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.821.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.100.0(ws@8.18.2)(zod@3.25.17))(zod@3.25.17))(@ibm-cloud/watsonx-ai@1.6.6)(@smithy/eventstream-codec@1.1.0)(@smithy/protocol-http@5.1.2)(@smithy/signature-v4@5.1.2)(@smithy/util-utf8@4.0.0)(axios@1.9.0)(cohere-ai@7.17.1)(fast-xml-parser@4.4.1)(google-auth-library@8.9.0)(ibm-cloud-sdk-core@5.3.2)(ignore@7.0.4)(jsonwebtoken@9.0.2)(playwright@1.52.0)(react@19.1.0)(ws@8.18.2)':
+  '@copilotkit/runtime@1.8.14-next.4(@ag-ui/client@0.0.30)(@ag-ui/core@0.0.30)(@ag-ui/encoder@0.0.30)(@ag-ui/proto@0.0.30)(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.821.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.52.0)(deepmerge@4.3.1)(dotenv@16.5.0)(openai@4.100.0(ws@8.18.2)(zod@3.25.17))(zod@3.25.17))(@ibm-cloud/watsonx-ai@1.6.6)(@smithy/eventstream-codec@1.1.0)(@smithy/protocol-http@5.1.2)(@smithy/signature-v4@5.1.2)(@smithy/util-utf8@4.0.0)(axios@1.9.0)(cohere-ai@7.17.1)(fast-xml-parser@4.4.1)(google-auth-library@8.9.0)(ibm-cloud-sdk-core@5.3.2)(ignore@7.0.4)(jsonwebtoken@9.0.2)(playwright@1.52.0)(react@19.1.0)(ws@8.18.2)':
     dependencies:
-      '@ag-ui/client': link:packages/client
-      '@ag-ui/core': link:packages/core
-      '@ag-ui/encoder': link:packages/encoder
-      '@ag-ui/proto': link:packages/proto
+      '@ag-ui/client': 0.0.30
+      '@ag-ui/core': 0.0.30
+      '@ag-ui/encoder': 0.0.30
+      '@ag-ui/proto': 0.0.30
       '@anthropic-ai/sdk': 0.27.3
       '@copilotkit/shared': 1.8.14-next.4
       '@graphql-yoga/plugin-defer-stream': 3.13.4(graphql-yoga@5.13.4(graphql@16.11.0))(graphql@16.11.0)
