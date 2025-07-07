@@ -172,7 +172,7 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
           It's very important to contact all the departments necessary to complete the task.
           For example, to hire an employee, you must contact the Finance and IT departments and to find a table at buildings management.
 
-          Make sure to communicate back to the relevant agent if making a tool call on behalf of another agent.
+          DO NOT FORGET TO COMMUNICATE BACK TO THE RELEVANT AGENT IF MAKING A TOOL CALL ON BEHALF OF ANOTHER AGENT!!!
    `,
         }),
       };
