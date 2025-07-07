@@ -115,6 +115,164 @@ const Chat = () => {
     },
   });
 
+  // useCopilotAction({
+  //   name: "confirmSalary",
+  //   description: "Confirm the salary for the employee.",
+  //   parameters: [
+  //     {
+  //       name: "salary",
+  //       type: "number",
+  //       description: "The salary of the employee.",
+  //     },
+  //   ],
+  //   renderAndWaitForResponse(props) {
+  //     const [salary, setSalary] = useState(props.args.salary || 100000);
+  //     const [isConfirmed, setIsConfirmed] = useState(false);
+
+  //     const formatCurrency = (amount: number) => {
+  //       return new Intl.NumberFormat("en-US", {
+  //         style: "currency",
+  //         currency: "USD",
+  //         minimumFractionDigits: 0,
+  //         maximumFractionDigits: 0,
+  //       }).format(amount);
+  //     };
+
+  //     const handleIncrement = () => {
+  //       setSalary((prev) => prev + 10000);
+  //     };
+
+  //     const handleDecrement = () => {
+  //       setSalary((prev) => Math.max(0, prev - 10000));
+  //     };
+
+  //     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //       const value = parseInt(e.target.value) || 0;
+  //       setSalary(Math.max(0, value));
+  //     };
+
+  //     const handleConfirm = () => {
+  //       if (!isConfirmed) {
+  //         setIsConfirmed(true);
+  //         props.respond?.(formatCurrency(salary));
+  //       }
+  //     };
+
+  //     return (
+  //       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md my-8">
+  //         <div className="mb-6">
+  //           <h2 className="text-xl font-bold text-gray-900 mb-2">Set Employee Salary</h2>
+  //           <p className="text-gray-600">
+  //             Adjust the salary using the buttons or enter a custom amount
+  //           </p>
+  //         </div>
+
+  //         {/* Salary Display */}
+  //         <div className="mb-6">
+  //           <div className="text-center p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+  //             <div className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(salary)}</div>
+  //             <div className="text-sm text-gray-500">Annual Salary</div>
+  //           </div>
+  //         </div>
+
+  //         {/* Controls */}
+  //         <div className="space-y-4 mb-6">
+  //           {/* Increment/Decrement Buttons */}
+  //           <div className="flex items-center justify-center gap-4">
+  //             <button
+  //               onClick={handleDecrement}
+  //               disabled={salary <= 0 || isConfirmed}
+  //               className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+  //             >
+  //               <svg
+  //                 className="w-6 h-6 text-red-600"
+  //                 fill="none"
+  //                 stroke="currentColor"
+  //                 viewBox="0 0 24 24"
+  //               >
+  //                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+  //               </svg>
+  //             </button>
+
+  //             <div className="text-center">
+  //               <div className="text-sm text-gray-500 mb-1">Adjust by</div>
+  //               <div className="text-lg font-semibold text-gray-900">$10,000</div>
+  //             </div>
+
+  //             <button
+  //               onClick={handleIncrement}
+  //               disabled={isConfirmed}
+  //               className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+  //             >
+  //               <svg
+  //                 className="w-6 h-6 text-green-600"
+  //                 fill="none"
+  //                 stroke="currentColor"
+  //                 viewBox="0 0 24 24"
+  //               >
+  //                 <path
+  //                   strokeLinecap="round"
+  //                   strokeLinejoin="round"
+  //                   strokeWidth={2}
+  //                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+  //                 />
+  //               </svg>
+  //             </button>
+  //           </div>
+
+  //           {/* Direct Input */}
+  //           <div>
+  //             <label className="block text-sm font-medium text-gray-700 mb-2">
+  //               Or enter custom amount:
+  //             </label>
+  //             <div className="relative">
+  //               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+  //                 <span className="text-gray-500 text-lg">$</span>
+  //               </div>
+  //               <input
+  //                 type="number"
+  //                 value={salary}
+  //                 onChange={handleInputChange}
+  //                 disabled={isConfirmed}
+  //                 className="block w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-lg"
+  //                 placeholder="100000"
+  //                 min="0"
+  //                 step="1000"
+  //               />
+  //             </div>
+  //           </div>
+  //         </div>
+
+  //         {/* Confirm Button */}
+  //         <button
+  //           onClick={handleConfirm}
+  //           disabled={isConfirmed}
+  //           className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm flex items-center justify-center gap-2 ${
+  //             isConfirmed
+  //               ? "bg-green-600 text-white cursor-not-allowed"
+  //               : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+  //           }`}
+  //         >
+  //           {isConfirmed ? (
+  //             <>
+  //               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+  //                 <path
+  //                   fillRule="evenodd"
+  //                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+  //                   clipRule="evenodd"
+  //                 />
+  //               </svg>
+  //               Confirmed
+  //             </>
+  //           ) : (
+  //             "Confirm Salary"
+  //           )}
+  //         </button>
+  //       </div>
+  //     );
+  //   },
+  // });
+
   useCopilotAction({
     name: "pickTable",
     description: "Lets the use pick a table from available tables.",
