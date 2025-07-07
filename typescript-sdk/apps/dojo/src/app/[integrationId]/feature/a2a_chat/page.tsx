@@ -287,6 +287,9 @@ const Chat = () => {
       console.log(props);
 
       let tables: any[] = [];
+
+      // This is a temporary hack to work around a bug in CopilotKit.
+      // Normally, the partial JSON would be parsed automatically.
       try {
         tables = JSON.parse(untruncateJson(props.args.tables || "[]")) as any[];
       } catch (e) {}
