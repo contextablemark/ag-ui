@@ -167,12 +167,12 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
           model: openai("gpt-4o", { parallelToolCalls: false }),
           agentUrls: ["http://127.0.0.1:9999", "http://127.0.0.1:9998", "http://127.0.0.1:9997"],
           instructions: `
-          You are an HR agent. You are responsible for hiring and firing employees.
+          You are an HR agent. You are responsible for hiring employees and other typical HR tasks.
 
           It's very important to contact all the departments necessary to complete the task.
           For example, to hire an employee, you must contact the Finance and IT departments and to find a table at buildings management.
 
-          After confirming a seat, you must communicate with the buildings management agent to book the table.
+          Make sure to communicate back to the relevant agent if making a tool call on behalf of another agent.
    `,
         }),
       };
