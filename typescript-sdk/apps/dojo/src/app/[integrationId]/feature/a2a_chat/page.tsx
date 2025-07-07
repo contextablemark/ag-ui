@@ -33,14 +33,13 @@ const A2AChat: React.FC<A2AChatProps> = ({ params }) => {
 };
 
 interface A2AChatState {
-  a2aMessages: { name: string; message: string }[];
+  a2aMessages: { name: string; to: string; message: string }[];
 }
 
 const Chat = () => {
   const [background, setBackground] = useState<string>("--copilot-kit-background-color");
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const { state } = useCoAgent({ name: "a2a_chat" });
-  console.log(state);
 
   React.useEffect(() => {
     if (state?.a2aMessages) {
@@ -71,21 +70,76 @@ const Chat = () => {
         return null;
       }
       return (
-        <div className="bg-muted rounded-lg p-4 w-full max-w-md ml-0 mb-4 text-left">
+        <div className="w-full max-w-2xl ml-0 mb-4 text-left">
           <div className="space-y-2">
             {state.a2aMessages.map((message, idx) => {
               return (
-                <div key={idx} className="text-xs text-muted-foreground flex flex-col items-start">
-                  <span className="font-medium text-[10px] text-muted-foreground/70 mb-0.5">
-                    {message.name}
-                  </span>
-                  <span className="break-words">{message.message}</span>
+                <div key={idx} className="bg-white border border-gray-200 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 min-w-[160px]">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                          message.name === "Agent"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {message.name}
+                      </span>
+                      <span className="text-muted-foreground text-[11px]">→</span>
+                      <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-white border border-gray-300 text-muted-foreground">
+                        {message.to}
+                      </span>
+                    </div>
+                    <span className="break-words text-[11px] flex-1">{message.message}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
       );
+    },
+  });
+
+  useCopilotAction({
+    name: "pickTable",
+    description: "Lets the use pick a table from available tables.",
+    parameters: [
+      {
+        name: "tables",
+        type: "object[]",
+        description: "The tables to pick from.",
+        properties: {
+          name: {
+            type: "string",
+            description: "The table name.",
+          },
+          seats: {
+            type: "object[]",
+            description: "The seats in the table.",
+            properties: {
+              seatNumber: {
+                type: "number",
+                description: "The seat number.",
+              },
+              status: {
+                type: "string",
+                description: "The status of the seat.",
+                enum: ["available", "occupied"],
+              },
+              name: {
+                type: "string",
+                description: "The name of the person seated at the table.",
+                optional: true,
+              },
+            },
+          },
+        },
+      },
+    ],
+    handler: ({ tables }) => {
+      console.log(tables);
     },
   });
 

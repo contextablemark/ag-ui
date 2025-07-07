@@ -93,7 +93,7 @@ export class A2AClientAgent extends AbstractAgent {
                 ),
             }),
             async execute({ agentName, task }) {
-              state.a2aMessages.push({ name: "Agent", message: task });
+              state.a2aMessages.push({ name: "Agent", to: agentName, message: task });
               observer.next({
                 type: EventType.STATE_SNAPSHOT,
                 snapshot: state,
@@ -123,7 +123,11 @@ export class A2AClientAgent extends AbstractAgent {
                 result.parts.length > 0 &&
                 result.parts[0].kind === "text"
               ) {
-                state.a2aMessages.push({ name: agentName, message: result.parts[0].text });
+                state.a2aMessages.push({
+                  name: agentName,
+                  to: "Agent",
+                  message: result.parts[0].text,
+                });
                 observer.next({
                   type: EventType.STATE_SNAPSHOT,
                   snapshot: state,
