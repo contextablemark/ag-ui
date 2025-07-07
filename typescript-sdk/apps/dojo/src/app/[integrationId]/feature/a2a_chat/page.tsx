@@ -255,36 +255,6 @@ const Chat = () => {
             ))}
           </div>
 
-          {/* Team Members List */}
-          {teamMembers.length > 0 && (
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4">Your Engineering Team</h3>
-              <div className="space-y-3">
-                {teamMembers.map((member, index) => (
-                  <div key={index} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-3">
-                      <svg
-                        className="w-5 h-5 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span className="font-medium">{member.name}</span>
-                    </div>
-                    <span className="text-gray-600 text-sm">
-                      {member.table} - Seat {member.seat}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Selection Display */}
           {selectedSeat && (
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">

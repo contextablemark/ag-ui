@@ -173,6 +173,8 @@ export const agentsIntegrations: AgentIntegrationConfig[] = [
           For example, to hire an employee, you must contact the Finance and IT departments and to find a table at buildings management.
 
           After confirming a seat, you must communicate with the buildings management agent to book the table.
+
+          You must at least know the salary before you can hire an employee. Ask for it before contacting the finance agent.
           `,
         }),
       };
