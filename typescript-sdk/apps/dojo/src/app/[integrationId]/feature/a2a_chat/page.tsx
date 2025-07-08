@@ -279,24 +279,40 @@ const Chat = () => {
     parameters: [
       {
         name: "tables",
-        type: "string",
+        type: "object[]",
+        attributes: [
+          {
+            name: "name",
+            type: "string",
+            description: "The name of the table",
+          },
+          {
+            name: "seats",
+            type: "object[]",
+            attributes: [
+              {
+                name: "seatNumber",
+                type: "number",
+                description: "The number of the seat",
+              },
+              {
+                name: "status",
+                type: "string",
+                enum: ["available", "occupied"],
+                description: "The status of the seat",
+              },
+              {
+                name: "name",
+                type: "string",
+                description: "The name of the person occupying the seat",
+              },
+            ],
+          },
+        ],
         description: `A JSON encoded array of tables. This is an example of the format: [{ "name": "Table 1", "seats": [{ "seatNumber": 1, "status": "available" }, { "seatNumber": 2, "status": "occupied", "name": "Alice" }] }, { "name": "Table 2", "seats": [{ "seatNumber": 1, "status": "available" }, { "seatNumber": 2, "status": "available" }] }, { "name": "Table 3", "seats": [{ "seatNumber": 1, "status": "occupied", "name": "Bob" }, { "seatNumber": 2, "status": "available" }] }]`,
       },
     ],
-    renderAndWaitForResponse(props) {
-      console.log(props);
-
-      let tables: any[] = [];
-
-      // This is a temporary hack to work around a bug in CopilotKit.
-      // Normally, the partial JSON would be parsed automatically.
-      try {
-        tables = JSON.parse(untruncateJson(props.args.tables || "[]")) as any[];
-      } catch (e) {}
-      const args = {
-        tables,
-      };
-
+    renderAndWaitForResponse({ args, respond }) {
       const [selectedSeat, setSelectedSeat] = useState<{
         tableIndex: number;
         seatNumber: number;
@@ -429,7 +445,7 @@ const Chat = () => {
                     // Handle seat selection confirmation
                     console.log("Selected seat:", selectedSeat);
                     setIsConfirmed(true);
-                    props.respond?.(
+                    respond?.(
                       `I would like to book ${args.tables?.[selectedSeat.tableIndex]?.name} - Seat ${selectedSeat.seatNumber}`,
                     );
                   }
