@@ -226,9 +226,9 @@ export abstract class AbstractAgent {
           throw error;
         }
 
-        return null as unknown as never;
+        // Return an empty mutation instead of null to prevent EmptyError
+        return {} as AgentStateMutation;
       }),
-      mergeMap((value) => (value === null ? EMPTY : of(value))),
     );
   }
 

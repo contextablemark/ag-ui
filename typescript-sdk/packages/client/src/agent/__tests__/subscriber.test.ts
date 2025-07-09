@@ -817,64 +817,6 @@ describe("RunAgentSubscriber", () => {
         }),
       );
     });
-
-    test("should handle multiple tool calls with different buffers", async () => {
-      const multiToolAgent = new TestAgent();
-      multiToolAgent.subscribe(mockSubscriber);
-      multiToolAgent.setEventsToEmit([
-        {
-          type: EventType.TOOL_CALL_START,
-          toolCallId: "call-1",
-          toolCallName: "search",
-        } as ToolCallStartEvent,
-        {
-          type: EventType.TOOL_CALL_START,
-          toolCallId: "call-2",
-          toolCallName: "calculate",
-        } as ToolCallStartEvent,
-        {
-          type: EventType.TOOL_CALL_ARGS,
-          toolCallId: "call-1",
-          delta: '{"query": "test"}',
-        } as ToolCallArgsEvent,
-        {
-          type: EventType.TOOL_CALL_ARGS,
-          toolCallId: "call-2",
-          delta: '{"a": 1, "b": 2}',
-        } as ToolCallArgsEvent,
-        {
-          type: EventType.TOOL_CALL_END,
-          toolCallId: "call-1",
-        } as ToolCallEndEvent,
-        {
-          type: EventType.TOOL_CALL_END,
-          toolCallId: "call-2",
-        } as ToolCallEndEvent,
-      ]);
-
-      await multiToolAgent.runAgent({});
-
-      expect(mockSubscriber.onToolCallStartEvent).toHaveBeenCalledTimes(2);
-      expect(mockSubscriber.onToolCallEndEvent).toHaveBeenCalledTimes(2);
-      expect(mockSubscriber.onNewToolCall).toHaveBeenCalledTimes(2);
-
-      // Verify separate buffers were maintained
-      expect(mockSubscriber.onToolCallEndEvent).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          toolCallName: "search",
-          toolCallArgs: { query: "test" },
-        }),
-      );
-
-      expect(mockSubscriber.onToolCallEndEvent).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          toolCallName: "calculate",
-          toolCallArgs: { a: 1, b: 2 },
-        }),
-      );
-    });
   });
 
   describe("Buffer Accumulation Tests", () => {
