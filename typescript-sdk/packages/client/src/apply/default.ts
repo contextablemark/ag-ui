@@ -148,6 +148,18 @@ export const defaultApplyEvents = (
           );
           applyMutation(mutation);
 
+          await Promise.all(
+            subscribers.map((subscriber) => {
+              subscriber.onNewMessage?.({
+                message: messages[messages.length - 1],
+                messages,
+                state,
+                agent,
+                input,
+              });
+            }),
+          );
+
           return emitUpdates();
         }
 
@@ -287,6 +299,21 @@ export const defaultApplyEvents = (
           );
           applyMutation(mutation);
 
+          await Promise.all(
+            subscribers.map((subscriber) => {
+              subscriber.onNewToolCall?.({
+                toolCall:
+                  messages[messages.length - 1].toolCalls[
+                    messages[messages.length - 1].toolCalls.length - 1
+                  ],
+                messages,
+                state,
+                agent,
+                input,
+              });
+            }),
+          );
+
           return emitUpdates();
         }
 
@@ -318,6 +345,18 @@ export const defaultApplyEvents = (
             };
 
             messages.push(toolMessage);
+
+            await Promise.all(
+              subscribers.map((subscriber) => {
+                subscriber.onNewMessage?.({
+                  message: toolMessage,
+                  messages,
+                  state,
+                  agent,
+                  input,
+                });
+              }),
+            );
 
             applyMutation({ messages });
           }

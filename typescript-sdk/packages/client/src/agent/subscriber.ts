@@ -20,6 +20,7 @@ import {
   MessagesSnapshotEvent,
   RawEvent,
   CustomEvent,
+  ToolCall,
 } from "@ag-ui/core";
 import { AbstractAgent } from "./agent";
 import { structuredClone_ } from "@/utils";
@@ -131,8 +132,10 @@ export interface RunAgentSubscriber {
   ): MaybePromise<AgentStateMutation | void>;
 
   // State changes
-  onMessagesChanged?(params: Omit<RunAgentSubscriberParams, "state">): MaybePromise<void>;
-  onStateChanged?(params: Omit<RunAgentSubscriberParams, "messages">): MaybePromise<void>;
+  onMessagesChanged?(params: RunAgentSubscriberParams): MaybePromise<void>;
+  onStateChanged?(params: RunAgentSubscriberParams): MaybePromise<void>;
+  onNewMessage?(params: { message: Message } & RunAgentSubscriberParams): MaybePromise<void>;
+  onNewToolCall?(params: { toolCall: ToolCall } & RunAgentSubscriberParams): MaybePromise<void>;
 }
 
 export async function runSubscribersWithMutation(

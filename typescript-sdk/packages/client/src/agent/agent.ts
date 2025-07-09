@@ -14,6 +14,10 @@ import { lastValueFrom } from "rxjs";
 import { transformChunks } from "@/chunks";
 import { AgentStateMutation, RunAgentSubscriber, runSubscribersWithMutation } from "./subscriber";
 
+export interface RunAgentResult {
+  result: any;
+}
+
 export abstract class AbstractAgent {
   public agentId?: string;
   public description: string;
@@ -53,7 +57,7 @@ export abstract class AbstractAgent {
   public async runAgent(
     parameters?: RunAgentParameters,
     subscriber?: RunAgentSubscriber,
-  ): Promise<any> {
+  ): Promise<RunAgentResult> {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
     let result: any = undefined;
@@ -83,7 +87,7 @@ export abstract class AbstractAgent {
       }),
     );
 
-    return lastValueFrom(pipeline(of(null))).then(() => result);
+    return lastValueFrom(pipeline(of(null))).then(() => ({ result }));
   }
 
   public abortRun() {}
@@ -108,6 +112,7 @@ export abstract class AbstractAgent {
           subscribers.forEach((subscriber) => {
             subscriber.onMessagesChanged?.({
               messages: this.messages,
+              state: this.state,
               agent: this,
               input,
             });
@@ -118,6 +123,7 @@ export abstract class AbstractAgent {
           subscribers.forEach((subscriber) => {
             subscriber.onStateChanged?.({
               state: this.state,
+              messages: this.messages,
               agent: this,
               input,
             });
@@ -157,6 +163,7 @@ export abstract class AbstractAgent {
         subscribers.forEach((subscriber) => {
           subscriber.onMessagesChanged?.({
             messages: this.messages,
+            state: this.state,
             agent: this,
             input,
           });
@@ -168,6 +175,7 @@ export abstract class AbstractAgent {
         subscribers.forEach((subscriber) => {
           subscriber.onStateChanged?.({
             state: this.state,
+            messages: this.messages,
             agent: this,
             input,
           });
@@ -194,6 +202,7 @@ export abstract class AbstractAgent {
             subscribers.forEach((subscriber) => {
               subscriber.onMessagesChanged?.({
                 messages: this.messages,
+                state: this.state,
                 agent: this,
                 input,
               });
@@ -204,6 +213,7 @@ export abstract class AbstractAgent {
             subscribers.forEach((subscriber) => {
               subscriber.onStateChanged?.({
                 state: this.state,
+                messages: this.messages,
                 agent: this,
                 input,
               });
@@ -240,6 +250,7 @@ export abstract class AbstractAgent {
         subscribers.forEach((subscriber) => {
           subscriber.onMessagesChanged?.({
             messages: this.messages,
+            state: this.state,
             agent: this,
             input,
           });
@@ -250,6 +261,7 @@ export abstract class AbstractAgent {
         subscribers.forEach((subscriber) => {
           subscriber.onStateChanged?.({
             state: this.state,
+            messages: this.messages,
             agent: this,
             input,
           });
