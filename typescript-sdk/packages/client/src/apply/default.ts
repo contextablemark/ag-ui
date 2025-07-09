@@ -23,7 +23,7 @@ import {
   StepStartedEvent,
   StepFinishedEvent,
 } from "@ag-ui/core";
-import { mergeMap, mergeAll } from "rxjs/operators";
+import { mergeMap, mergeAll, defaultIfEmpty, concatMap } from "rxjs/operators";
 import { of, EMPTY } from "rxjs";
 import { structuredClone_ } from "../utils";
 import { applyPatch } from "fast-json-patch";
@@ -67,7 +67,7 @@ export const defaultApplyEvents = (
   };
 
   return events$.pipe(
-    mergeMap(async (event) => {
+    concatMap(async (event) => {
       switch (event.type) {
         case EventType.TEXT_MESSAGE_START: {
           const mutation = await runSubscribersWithMutation(
@@ -627,5 +627,6 @@ export const defaultApplyEvents = (
       return emitUpdates();
     }),
     mergeAll(),
+    defaultIfEmpty({}),
   );
 };

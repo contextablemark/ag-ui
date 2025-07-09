@@ -18,6 +18,8 @@ import {
   ToolCallResultEvent,
   CustomEvent,
   ToolCall,
+  StepStartedEvent,
+  StepFinishedEvent,
 } from "@ag-ui/core";
 import { Observable, of, throwError, from } from "rxjs";
 import { mergeMap, defaultIfEmpty, startWith } from "rxjs/operators";
@@ -879,6 +881,7 @@ describe("RunAgentSubscriber", () => {
         {
           type: EventType.TEXT_MESSAGE_START,
           messageId: "msg-1",
+          role: "assistant",
         } as TextMessageStartEvent,
         {
           type: EventType.TEXT_MESSAGE_CONTENT,
@@ -909,21 +912,21 @@ describe("RunAgentSubscriber", () => {
       expect(mockSubscriber.onTextMessageContentEvent).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({
-          textMessageBuffer: "Hello",
+          textMessageBuffer: "", // First event: no content accumulated yet
         }),
       );
 
       expect(mockSubscriber.onTextMessageContentEvent).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          textMessageBuffer: "Hello ",
+          textMessageBuffer: "Hello", // Second event: content from first event
         }),
       );
 
       expect(mockSubscriber.onTextMessageContentEvent).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          textMessageBuffer: "Hello World",
+          textMessageBuffer: "Hello ", // Third event: content from first + second events
         }),
       );
 
@@ -972,7 +975,7 @@ describe("RunAgentSubscriber", () => {
       expect(mockSubscriber.onTextMessageContentEvent).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({
-          textMessageBuffer: "First",
+          textMessageBuffer: "", // First message, first content: no content accumulated yet
         }),
       );
 
@@ -980,7 +983,7 @@ describe("RunAgentSubscriber", () => {
       expect(mockSubscriber.onTextMessageContentEvent).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          textMessageBuffer: "Second",
+          textMessageBuffer: "", // Second message, first content: buffer reset, no content accumulated yet
         }),
       );
     });
@@ -1303,6 +1306,39 @@ describe("RunAgentSubscriber", () => {
 
       expect(trackingSubscriber.onTextMessageStartEvent).toHaveBeenCalledTimes(2);
       expect(trackingSubscriber.onToolCallStartEvent).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("EmptyError Bug Reproduction", () => {
+    test("should demonstrate EmptyError with STEP_STARTED/STEP_FINISHED events that cause no mutations", async () => {
+      const emptyAgent = new TestAgent();
+
+      // No subscribers that return mutations
+      emptyAgent.setEventsToEmit([
+        {
+          type: EventType.RUN_STARTED,
+          runId: "run-123",
+        } as RunStartedEvent,
+        {
+          type: EventType.STEP_STARTED,
+          stepName: "step-1",
+        } as StepStartedEvent,
+        {
+          type: EventType.STEP_FINISHED,
+          stepName: "step-1",
+        } as StepFinishedEvent,
+        {
+          type: EventType.RUN_FINISHED,
+          runId: "run-123",
+        } as RunFinishedEvent,
+      ]);
+
+      // This should throw EmptyError because:
+      // 1. STEP_STARTED and STEP_FINISHED have no default behavior (don't modify messages/state)
+      // 2. No subscribers return mutations
+      // 3. ALL calls to emitUpdates() return EMPTY
+      // 4. Observable completes without emitting anything
+      await expect(emptyAgent.runAgent({}));
     });
   });
 });

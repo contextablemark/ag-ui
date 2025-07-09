@@ -1,18 +1,5 @@
 ## Issues Exposed by the Real Tests:
 
-### 1. **EmptyError Issues**
-
-Many tests fail with `EmptyError: no elements in sequence` - the real `defaultApplyEvents` implementation doesn't emit values properly, causing the RxJS pipeline to complete without emitting anything.
-
-### 2. **Missing onEvent Callback** ✅ (as you expected)
-
-```
-Expected number of calls: 2
-Received number of calls: 0
-```
-
-The real implementation does NOT call the generic `onEvent` callback, confirming this is missing.
-
 ### 3. **Buffer Logic Mismatch** ✅ (as you pointed out)
 
 ```
