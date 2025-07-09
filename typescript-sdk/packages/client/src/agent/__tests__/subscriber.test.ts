@@ -33,7 +33,17 @@ jest.mock("uuid", () => ({
 
 // Mock utils
 jest.mock("@/utils", () => ({
-  structuredClone_: (obj: any) => JSON.parse(JSON.stringify(obj)),
+  structuredClone_: (obj: any) => {
+    if (obj === undefined) {
+      return undefined;
+    }
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch (error) {
+      // Fallback for cases where JSON.stringify/parse fails
+      return obj;
+    }
+  },
 }));
 
 // Mock the verify modules but NOT apply - we want to test against real defaultApplyEvents
@@ -1179,7 +1189,7 @@ describe("RunAgentSubscriber", () => {
       expect(mockSubscriber.onToolCallResultEvent).toHaveBeenCalledTimes(1);
       expect(mockSubscriber.onStateSnapshotEvent).toHaveBeenCalledTimes(1);
       expect(mockSubscriber.onRunFinishedEvent).toHaveBeenCalledTimes(1);
-      expect(mockSubscriber.onNewMessage).toHaveBeenCalledTimes(2);
+      expect(mockSubscriber.onNewMessage).toHaveBeenCalledTimes(3); // 2 TEXT_MESSAGE_END + 1 TOOL_CALL_RESULT
       expect(mockSubscriber.onNewToolCall).toHaveBeenCalledTimes(1);
     });
   });
