@@ -47,7 +47,7 @@ async function chatLoop() {
                 process.stdout.write(event.delta);
               },
               onToolCallEndEvent() {
-                console.log("\n");
+                console.log("");
               },
               onToolCallResultEvent({ event }) {
                 if (event.content) {

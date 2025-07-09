@@ -5,7 +5,6 @@ import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
 import { weatherTool } from "./tools/weather.tool";
 import { browserTool } from "./tools/browser.tool";
-import { z } from "zod";
 
 export const agent = new MastraAgent({
   // @ts-ignore
