@@ -31,18 +31,13 @@ jest.mock("uuid", () => ({
   v4: jest.fn().mockReturnValue("mock-uuid"),
 }));
 
-// Mock utils
+// Mock utils with handling for undefined values
 jest.mock("@/utils", () => ({
   structuredClone_: (obj: any) => {
-    if (obj === undefined) {
-      return undefined;
-    }
-    try {
-      return JSON.parse(JSON.stringify(obj));
-    } catch (error) {
-      // Fallback for cases where JSON.stringify/parse fails
-      return obj;
-    }
+    if (obj === undefined) return undefined;
+    const jsonString = JSON.stringify(obj);
+    if (jsonString === undefined || jsonString === "undefined") return undefined;
+    return JSON.parse(jsonString);
   },
 }));
 

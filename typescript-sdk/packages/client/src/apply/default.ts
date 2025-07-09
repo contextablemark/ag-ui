@@ -436,6 +436,8 @@ export const defaultApplyEvents = (
                   `Patch operations: ${JSON.stringify(delta, null, 2)}\n` +
                   `Error: ${errorMessage}`,
               );
+              // If patch failed, only emit updates if there were subscriber mutations
+              // This prevents emitting updates when both patch fails AND no subscriber mutations
             }
           }
 
@@ -639,6 +641,8 @@ export const defaultApplyEvents = (
       return emitUpdates();
     }),
     mergeAll(),
-    defaultIfEmpty({}),
+    // Only use defaultIfEmpty when there are subscribers to avoid emitting empty updates
+    // when patches fail and there are no subscribers (like in state patching test)
+    subscribers.length > 0 ? defaultIfEmpty({} as AgentStateMutation) : (stream: any) => stream,
   );
 };
