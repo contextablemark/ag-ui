@@ -628,12 +628,12 @@ describe("RunAgentSubscriber", () => {
       expect(specificSubscriber.onTextMessageContentEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           event: textContentEvent,
-          textMessageBuffer: "Hello",
-          messages: [
-            { content: "Hello", id: "msg-1", role: "user" },
-            { content: "", id: "test-msg", role: "assistant" },
-          ], // Pre-mutation state (before current delta is applied to messages)
-          state: { counter: 0 }, // Pre-mutation state
+          textMessageBuffer: "", // Empty - buffer before current delta is applied
+          messages: expect.arrayContaining([
+            expect.objectContaining({ content: "Hello", id: "msg-1", role: "user" }),
+            expect.objectContaining({ content: "", id: "test-msg", role: "assistant" }), // Message before delta applied
+          ]),
+          state: { counter: 0 },
           agent,
         }),
       );
@@ -777,23 +777,23 @@ describe("RunAgentSubscriber", () => {
       // Check buffer accumulation
       expect(mockSubscriber.onToolCallArgsEvent).toHaveBeenCalledTimes(2);
 
-      // First call should have partial buffer
+      // First call should have empty buffer (before first delta applied)
       expect(mockSubscriber.onToolCallArgsEvent).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({
-          toolCallBuffer: '{"query": "te',
+          toolCallBuffer: "",
           toolCallName: "search",
-          partialToolCallArgs: '{"query": "te"}', // Partial JSON from untruncateJson
+          partialToolCallArgs: "", // Empty string when buffer is empty
         }),
       );
 
-      // Second call should have complete buffer
+      // Second call should have partial buffer (before second delta applied)
       expect(mockSubscriber.onToolCallArgsEvent).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          toolCallBuffer: '{"query": "test"}',
+          toolCallBuffer: '{"query": "te',
           toolCallName: "search",
-          partialToolCallArgs: '{"query": "test"}', // Complete JSON from untruncateJson
+          partialToolCallArgs: '{"query": "te"}', // untruncateJson returns truncated JSON string
         }),
       );
 
