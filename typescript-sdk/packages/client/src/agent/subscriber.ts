@@ -154,30 +154,37 @@ export async function runSubscribersWithMutation(
   let stopPropagation: boolean | undefined = undefined;
 
   for (const subscriber of subscribers) {
-    const mutation = await executor(
-      subscriber,
-      structuredClone_(messages),
-      structuredClone_(state),
-    );
+    try {
+      const mutation = await executor(
+        subscriber,
+        structuredClone_(messages),
+        structuredClone_(state),
+      );
 
-    if (mutation === undefined) {
-      // Nothing returned – keep going
+      if (mutation === undefined) {
+        // Nothing returned – keep going
+        continue;
+      }
+
+      // Merge messages/state so next subscriber sees latest view
+      if (mutation.messages !== undefined) {
+        messages = mutation.messages;
+      }
+
+      if (mutation.state !== undefined) {
+        state = mutation.state;
+      }
+
+      stopPropagation = mutation.stopPropagation;
+
+      if (stopPropagation === true) {
+        break;
+      }
+    } catch (error) {
+      // Log subscriber errors but continue processing
+      console.error("Subscriber error:", error);
+      // Continue to next subscriber unless we want to stop propagation
       continue;
-    }
-
-    // Merge messages/state so next subscriber sees latest view
-    if (mutation.messages !== undefined) {
-      messages = mutation.messages;
-    }
-
-    if (mutation.state !== undefined) {
-      state = mutation.state;
-    }
-
-    stopPropagation = mutation.stopPropagation;
-
-    if (stopPropagation === true) {
-      break;
     }
   }
 

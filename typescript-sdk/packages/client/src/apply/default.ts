@@ -68,6 +68,19 @@ export const defaultApplyEvents = (
 
   return events$.pipe(
     concatMap(async (event) => {
+      const mutation = await runSubscribersWithMutation(
+        subscribers,
+        messages,
+        state,
+        (subscriber, messages, state) =>
+          subscriber.onEvent?.({ event, agent, input, messages, state }),
+      );
+      applyMutation(mutation);
+
+      if (mutation.stopPropagation === true) {
+        return emitUpdates();
+      }
+
       switch (event.type) {
         case EventType.TEXT_MESSAGE_START: {
           const mutation = await runSubscribersWithMutation(

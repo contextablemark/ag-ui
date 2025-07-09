@@ -316,6 +316,7 @@ describe("RunAgentSubscriber", () => {
       const mutatingSubscriber: RunAgentSubscriber = {
         onStateSnapshotEvent: jest.fn().mockReturnValue({
           state: { modifiedBySubscriber: true },
+          stopPropagation: true, // Prevent the event from applying its snapshot
         }),
         onStateChanged: jest.fn(),
       };
@@ -618,8 +619,8 @@ describe("RunAgentSubscriber", () => {
       expect(specificSubscriber.onTextMessageStartEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           event: textStartEvent,
-          messages: agent.messages,
-          state: agent.state,
+          messages: [{ content: "Hello", id: "msg-1", role: "user" }], // Pre-mutation state
+          state: { counter: 0 }, // Pre-mutation state
           agent,
         }),
       );
@@ -628,8 +629,8 @@ describe("RunAgentSubscriber", () => {
         expect.objectContaining({
           event: textContentEvent,
           textMessageBuffer: "Hello",
-          messages: agent.messages,
-          state: agent.state,
+          messages: agent.messages, // Can check final state for content events
+          state: agent.state, // Can check final state for content events
           agent,
         }),
       );
