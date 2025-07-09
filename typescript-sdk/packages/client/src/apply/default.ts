@@ -116,6 +116,10 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TEXT_MESSAGE_CONTENT: {
+          const { delta } = event as TextMessageContentEvent;
+          const currentContent = messages[messages.length - 1].content ?? "";
+          const newTextMessageBuffer = currentContent + delta;
+
           const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
@@ -127,17 +131,15 @@ export const defaultApplyEvents = (
                 state,
                 agent,
                 input,
-                textMessageBuffer: messages[messages.length - 1].content ?? "",
+                textMessageBuffer: newTextMessageBuffer,
               }),
           );
           applyMutation(mutation);
 
           if (mutation.stopPropagation !== true) {
-            const { delta } = event as TextMessageContentEvent;
-
             // Get the last message and append the content
             const lastMessage = messages[messages.length - 1];
-            lastMessage.content = lastMessage.content! + delta;
+            lastMessage.content = newTextMessageBuffer;
             applyMutation({ messages });
           }
 
@@ -233,31 +235,31 @@ export const defaultApplyEvents = (
         }
 
         case EventType.TOOL_CALL_ARGS: {
+          const { delta } = event as ToolCallArgsEvent;
+          const toolCalls = (messages[messages.length - 1] as AssistantMessage)?.toolCalls ?? [];
+          const currentToolCallBuffer =
+            toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.arguments : "";
+          const newToolCallBuffer = currentToolCallBuffer + delta;
+          const toolCallName =
+            toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.name : "";
+
+          let partialToolCallArgs = {};
+          try {
+            partialToolCallArgs = untruncateJson(newToolCallBuffer);
+          } catch (error) {}
+
           const mutation = await runSubscribersWithMutation(
             subscribers,
             messages,
             state,
             (subscriber, messages, state) => {
-              const toolCalls =
-                (messages[messages.length - 1] as AssistantMessage)?.toolCalls ?? [];
-              const toolCallBuffer =
-                toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.arguments : "";
-              const toolCallName =
-                toolCalls.length > 0 ? toolCalls[toolCalls.length - 1].function.name : "";
-              let partialToolCallArgs = {};
-              try {
-                partialToolCallArgs = untruncateJson(
-                  toolCallBuffer + (event as ToolCallArgsEvent).delta,
-                );
-              } catch (error) {}
-
               return subscriber.onToolCallArgsEvent?.({
                 event: event as ToolCallArgsEvent,
                 messages,
                 state,
                 agent,
                 input,
-                toolCallBuffer,
+                toolCallBuffer: newToolCallBuffer,
                 toolCallName,
                 partialToolCallArgs,
               });
@@ -266,16 +268,14 @@ export const defaultApplyEvents = (
           applyMutation(mutation);
 
           if (mutation.stopPropagation !== true) {
-            const { delta } = event as ToolCallArgsEvent;
-
             // Get the last message
             const lastMessage = messages[messages.length - 1];
 
             // Get the last tool call
             const lastToolCall = lastMessage.toolCalls[lastMessage.toolCalls.length - 1];
 
-            // Append the arguments
-            lastToolCall.function.arguments += delta;
+            // Set the complete new arguments
+            lastToolCall.function.arguments = newToolCallBuffer;
 
             applyMutation({ messages });
           }

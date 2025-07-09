@@ -629,8 +629,11 @@ describe("RunAgentSubscriber", () => {
         expect.objectContaining({
           event: textContentEvent,
           textMessageBuffer: "Hello",
-          messages: agent.messages, // Can check final state for content events
-          state: agent.state, // Can check final state for content events
+          messages: [
+            { content: "Hello", id: "msg-1", role: "user" },
+            { content: "", id: "test-msg", role: "assistant" },
+          ], // Pre-mutation state (before current delta is applied to messages)
+          state: { counter: 0 }, // Pre-mutation state
           agent,
         }),
       );
@@ -780,7 +783,7 @@ describe("RunAgentSubscriber", () => {
         expect.objectContaining({
           toolCallBuffer: '{"query": "te',
           toolCallName: "search",
-          partialToolCallArgs: {}, // Partial JSON parsing failed
+          partialToolCallArgs: '{"query": "te"}', // Partial JSON from untruncateJson
         }),
       );
 
@@ -790,7 +793,7 @@ describe("RunAgentSubscriber", () => {
         expect.objectContaining({
           toolCallBuffer: '{"query": "test"}',
           toolCallName: "search",
-          partialToolCallArgs: { query: "test" },
+          partialToolCallArgs: '{"query": "test"}', // Complete JSON from untruncateJson
         }),
       );
 
