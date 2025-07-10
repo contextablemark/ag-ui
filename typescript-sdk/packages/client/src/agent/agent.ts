@@ -16,6 +16,7 @@ import { AgentStateMutation, RunAgentSubscriber, runSubscribersWithMutation } fr
 
 export interface RunAgentResult {
   result: any;
+  newMessages: Message[];
 }
 
 export abstract class AbstractAgent {
@@ -61,6 +62,8 @@ export abstract class AbstractAgent {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
     let result: any = undefined;
+    const currentMessageIds = new Set(this.messages.map((message) => message.id));
+
     const subscribers: RunAgentSubscriber[] = [
       {
         onRunFinishedEvent: (params) => {
@@ -87,7 +90,12 @@ export abstract class AbstractAgent {
       }),
     );
 
-    return lastValueFrom(pipeline(of(null))).then(() => ({ result }));
+    return lastValueFrom(pipeline(of(null))).then(() => {
+      const newMessages = structuredClone_(this.messages).filter(
+        (message: Message) => !currentMessageIds.has(message.id),
+      );
+      return { result, newMessages };
+    });
   }
 
   public abortRun() {}
