@@ -1,10 +1,9 @@
 import { AbstractAgent } from "../agent";
-import { RunAgentSubscriber, AgentStateMutation, runSubscribersWithMutation } from "../subscriber";
+import { RunAgentSubscriber } from "../subscriber";
 import {
   BaseEvent,
   EventType,
   Message,
-  State,
   RunAgentInput,
   TextMessageStartEvent,
   TextMessageContentEvent,
@@ -17,14 +16,11 @@ import {
   ToolCallEndEvent,
   ToolCallResultEvent,
   CustomEvent,
-  ToolCall,
   StepStartedEvent,
   StepFinishedEvent,
 } from "@ag-ui/core";
 import { Observable, of, throwError, from } from "rxjs";
-import { mergeMap, defaultIfEmpty, startWith } from "rxjs/operators";
-import { v4 as uuidv4 } from "uuid";
-import { defaultApplyEvents } from "@/apply/default";
+import { mergeMap } from "rxjs/operators";
 
 // Mock uuid module
 jest.mock("uuid", () => ({

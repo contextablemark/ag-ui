@@ -1,5 +1,5 @@
 import { defaultApplyEvents } from "@/apply/default";
-import { Message, State, RunAgentInput, BaseEvent } from "@ag-ui/core";
+import { Message, State, RunAgentInput, BaseEvent, ToolCall, AssistantMessage } from "@ag-ui/core";
 
 import { AgentConfig, RunAgentParameters } from "./types";
 import { v4 as uuidv4 } from "uuid";
@@ -281,6 +281,58 @@ export abstract class AbstractAgent {
     }
 
     return cloned;
+  }
+
+  public addMessage(message: Message) {
+    // Add message to the messages array
+    this.messages.push(message);
+
+    // Create minimal input for subscriber context
+    const input: RunAgentInput = {
+      threadId: this.threadId,
+      runId: uuidv4(),
+      tools: [],
+      context: [],
+      forwardedProps: {},
+      state: structuredClone_(this.state),
+      messages: structuredClone_(this.messages),
+    };
+
+    // Fire onMessagesChanged
+    this.subscribers.forEach((subscriber) => {
+      subscriber.onMessagesChanged?.({
+        messages: this.messages,
+        state: this.state,
+        agent: this,
+        input,
+      });
+    });
+
+    // Fire onNewMessage
+    this.subscribers.forEach((subscriber) => {
+      subscriber.onNewMessage?.({
+        message,
+        messages: this.messages,
+        state: this.state,
+        agent: this,
+        input,
+      });
+    });
+
+    // Fire onNewToolCall if the message is from assistant and contains tool calls
+    if (message.role === "assistant" && message.toolCalls) {
+      message.toolCalls.forEach((toolCall: ToolCall) => {
+        this.subscribers.forEach((subscriber) => {
+          subscriber.onNewToolCall?.({
+            toolCall,
+            messages: this.messages,
+            state: this.state,
+            agent: this,
+            input,
+          });
+        });
+      });
+    }
   }
 
   public legacy_to_be_removed_runAgentBridged(

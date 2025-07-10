@@ -132,10 +132,22 @@ export interface RunAgentSubscriber {
   ): MaybePromise<AgentStateMutation | void>;
 
   // State changes
-  onMessagesChanged?(params: RunAgentSubscriberParams): MaybePromise<void>;
-  onStateChanged?(params: RunAgentSubscriberParams): MaybePromise<void>;
-  onNewMessage?(params: { message: Message } & RunAgentSubscriberParams): MaybePromise<void>;
-  onNewToolCall?(params: { toolCall: ToolCall } & RunAgentSubscriberParams): MaybePromise<void>;
+  onMessagesChanged?(
+    params: Omit<RunAgentSubscriberParams, "input"> & { input?: RunAgentInput },
+  ): MaybePromise<void>;
+  onStateChanged?(
+    params: Omit<RunAgentSubscriberParams, "input"> & { input?: RunAgentInput },
+  ): MaybePromise<void>;
+  onNewMessage?(
+    params: { message: Message } & Omit<RunAgentSubscriberParams, "input"> & {
+        input?: RunAgentInput;
+      },
+  ): MaybePromise<void>;
+  onNewToolCall?(
+    params: { toolCall: ToolCall } & Omit<RunAgentSubscriberParams, "input"> & {
+        input?: RunAgentInput;
+      },
+  ): MaybePromise<void>;
 }
 
 export async function runSubscribersWithMutation(
@@ -181,8 +193,15 @@ export async function runSubscribersWithMutation(
         break;
       }
     } catch (error) {
-      // Log subscriber errors but continue processing
-      console.error("Subscriber error:", error);
+      // Log subscriber errors but continue processing (silence during tests)
+      const isTestEnvironment =
+        process.env.NODE_ENV === "test" ||
+        process.env.JEST_WORKER_ID !== undefined ||
+        typeof jest !== "undefined";
+
+      if (!isTestEnvironment) {
+        console.error("Subscriber error:", error);
+      }
       // Continue to next subscriber unless we want to stop propagation
       continue;
     }
