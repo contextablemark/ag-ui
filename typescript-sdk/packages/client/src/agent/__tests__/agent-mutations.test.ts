@@ -1,5 +1,5 @@
 import { AbstractAgent } from "../agent";
-import { RunAgentSubscriber } from "../subscriber";
+import { AgentSubscriber } from "../subscriber";
 import {
   BaseEvent,
   EventType,
@@ -50,7 +50,7 @@ class TestAgent extends AbstractAgent {
 
 describe("Agent Mutations", () => {
   let agent: TestAgent;
-  let mockSubscriber: RunAgentSubscriber;
+  let mockSubscriber: AgentSubscriber;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -392,7 +392,7 @@ describe("Agent Mutations", () => {
     it("should execute subscriber notifications in registration order", async () => {
       const callOrder: string[] = [];
 
-      const firstSubscriber: RunAgentSubscriber = {
+      const firstSubscriber: AgentSubscriber = {
         onNewMessage: jest.fn().mockImplementation(() => {
           callOrder.push("first-newMessage");
         }),
@@ -401,7 +401,7 @@ describe("Agent Mutations", () => {
         }),
       };
 
-      const secondSubscriber: RunAgentSubscriber = {
+      const secondSubscriber: AgentSubscriber = {
         onNewMessage: jest.fn().mockImplementation(() => {
           callOrder.push("second-newMessage");
         }),
@@ -440,13 +440,13 @@ describe("Agent Mutations", () => {
 
   describe("multiple subscribers", () => {
     it("should notify all subscribers for each event", async () => {
-      const subscriber2: RunAgentSubscriber = {
+      const subscriber2: AgentSubscriber = {
         onNewMessage: jest.fn(),
         onMessagesChanged: jest.fn(),
         onNewToolCall: jest.fn(),
       };
 
-      const subscriber3: RunAgentSubscriber = {
+      const subscriber3: AgentSubscriber = {
         onNewMessage: jest.fn(),
         onMessagesChanged: jest.fn(),
       };

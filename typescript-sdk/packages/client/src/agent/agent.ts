@@ -12,7 +12,7 @@ import { convertToLegacyEvents } from "@/legacy/convert";
 import { LegacyRuntimeProtocolEvent } from "@/legacy/types";
 import { lastValueFrom } from "rxjs";
 import { transformChunks } from "@/chunks";
-import { AgentStateMutation, RunAgentSubscriber, runSubscribersWithMutation } from "./subscriber";
+import { AgentStateMutation, AgentSubscriber, runSubscribersWithMutation } from "./subscriber";
 
 export interface RunAgentResult {
   result: any;
@@ -26,7 +26,7 @@ export abstract class AbstractAgent {
   public messages: Message[];
   public state: State;
   public debug: boolean = false;
-  public subscribers: RunAgentSubscriber[] = [];
+  public subscribers: AgentSubscriber[] = [];
 
   constructor({
     agentId,
@@ -44,7 +44,7 @@ export abstract class AbstractAgent {
     this.debug = debug ?? false;
   }
 
-  public subscribe(subscriber: RunAgentSubscriber) {
+  public subscribe(subscriber: AgentSubscriber) {
     this.subscribers.push(subscriber);
     return {
       unsubscribe: () => {
@@ -57,14 +57,14 @@ export abstract class AbstractAgent {
 
   public async runAgent(
     parameters?: RunAgentParameters,
-    subscriber?: RunAgentSubscriber,
+    subscriber?: AgentSubscriber,
   ): Promise<RunAgentResult> {
     this.agentId = this.agentId ?? uuidv4();
     const input = this.prepareRunAgentInput(parameters);
     let result: any = undefined;
     const currentMessageIds = new Set(this.messages.map((message) => message.id));
 
-    const subscribers: RunAgentSubscriber[] = [
+    const subscribers: AgentSubscriber[] = [
       {
         onRunFinishedEvent: (params) => {
           result = params.result;
@@ -103,7 +103,7 @@ export abstract class AbstractAgent {
   protected apply(
     input: RunAgentInput,
     events$: Observable<BaseEvent>,
-    subscribers: RunAgentSubscriber[],
+    subscribers: AgentSubscriber[],
   ): Observable<AgentStateMutation> {
     return defaultApplyEvents(input, events$, this, subscribers);
   }
@@ -111,7 +111,7 @@ export abstract class AbstractAgent {
   protected processApplyEvents(
     input: RunAgentInput,
     events$: Observable<AgentStateMutation>,
-    subscribers: RunAgentSubscriber[],
+    subscribers: AgentSubscriber[],
   ): Observable<AgentStateMutation> {
     return events$.pipe(
       tap((event) => {
@@ -153,7 +153,7 @@ export abstract class AbstractAgent {
     };
   }
 
-  protected async onInitialize(input: RunAgentInput, subscribers: RunAgentSubscriber[]) {
+  protected async onInitialize(input: RunAgentInput, subscribers: AgentSubscriber[]) {
     const onRunInitializedMutation = await runSubscribersWithMutation(
       subscribers,
       this.messages,
@@ -192,7 +192,7 @@ export abstract class AbstractAgent {
     }
   }
 
-  protected onError(input: RunAgentInput, error: Error, subscribers: RunAgentSubscriber[]) {
+  protected onError(input: RunAgentInput, error: Error, subscribers: AgentSubscriber[]) {
     return from(
       runSubscribersWithMutation(
         subscribers,
@@ -240,7 +240,7 @@ export abstract class AbstractAgent {
     );
   }
 
-  protected async onFinalize(input: RunAgentInput, subscribers: RunAgentSubscriber[]) {
+  protected async onFinalize(input: RunAgentInput, subscribers: AgentSubscriber[]) {
     const onRunFinalizedMutation = await runSubscribersWithMutation(
       subscribers,
       this.messages,

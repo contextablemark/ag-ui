@@ -29,7 +29,7 @@ import { structuredClone_ } from "../utils";
 import { applyPatch } from "fast-json-patch";
 import {
   AgentStateMutation,
-  RunAgentSubscriber,
+  AgentSubscriber,
   runSubscribersWithMutation,
 } from "@/agent/subscriber";
 import { Observable } from "rxjs";
@@ -40,7 +40,7 @@ export const defaultApplyEvents = (
   input: RunAgentInput,
   events$: Observable<BaseEvent>,
   agent: AbstractAgent,
-  subscribers: RunAgentSubscriber[],
+  subscribers: AgentSubscriber[],
 ): Observable<AgentStateMutation> => {
   let messages = structuredClone_(input.messages);
   let state = structuredClone_(input.state);

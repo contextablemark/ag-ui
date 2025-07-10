@@ -1,5 +1,5 @@
 import { AbstractAgent } from "../agent";
-import { RunAgentSubscriber } from "../subscriber";
+import { AgentSubscriber } from "../subscriber";
 import {
   BaseEvent,
   EventType,
@@ -59,9 +59,9 @@ class TestAgent extends AbstractAgent {
   }
 }
 
-describe("RunAgentSubscriber", () => {
+describe("AgentSubscriber", () => {
   let agent: TestAgent;
-  let mockSubscriber: RunAgentSubscriber;
+  let mockSubscriber: AgentSubscriber;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -117,7 +117,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should support multiple subscribers", () => {
-      const subscriber2: RunAgentSubscriber = {
+      const subscriber2: AgentSubscriber = {
         onEvent: jest.fn(),
       };
 
@@ -130,7 +130,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should only remove the specific subscriber on unsubscribe", () => {
-      const subscriber2: RunAgentSubscriber = {
+      const subscriber2: AgentSubscriber = {
         onEvent: jest.fn(),
       };
 
@@ -150,7 +150,7 @@ describe("RunAgentSubscriber", () => {
 
   describe("temporary subscribers via runAgent", () => {
     it("should accept a temporary subscriber via runAgent parameter", async () => {
-      const temporarySubscriber: RunAgentSubscriber = {
+      const temporarySubscriber: AgentSubscriber = {
         onRunStartedEvent: jest.fn(),
         onRunFinishedEvent: jest.fn(),
       };
@@ -194,11 +194,11 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should combine permanent and temporary subscribers", async () => {
-      const permanentSubscriber: RunAgentSubscriber = {
+      const permanentSubscriber: AgentSubscriber = {
         onRunStartedEvent: jest.fn(),
       };
 
-      const temporarySubscriber: RunAgentSubscriber = {
+      const temporarySubscriber: AgentSubscriber = {
         onRunStartedEvent: jest.fn(),
       };
 
@@ -228,7 +228,7 @@ describe("RunAgentSubscriber", () => {
         content: "I was added by subscriber",
       };
 
-      const mutatingSubscriber: RunAgentSubscriber = {
+      const mutatingSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({
           messages: [...agent.messages, newMessage],
         }),
@@ -272,7 +272,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should allow subscribers to mutate state", async () => {
-      const mutatingSubscriber: RunAgentSubscriber = {
+      const mutatingSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({
           state: { counter: 42, newField: "added" },
         }),
@@ -314,7 +314,7 @@ describe("RunAgentSubscriber", () => {
         snapshot: { newCounter: 100 },
       };
 
-      const mutatingSubscriber: RunAgentSubscriber = {
+      const mutatingSubscriber: AgentSubscriber = {
         onStateSnapshotEvent: jest.fn().mockReturnValue({
           state: { modifiedBySubscriber: true },
           stopPropagation: true, // Prevent the event from applying its snapshot
@@ -340,13 +340,13 @@ describe("RunAgentSubscriber", () => {
 
   describe("stopPropagation functionality", () => {
     it("should stop propagation to subsequent subscribers when stopPropagation is true", async () => {
-      const firstSubscriber: RunAgentSubscriber = {
+      const firstSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({
           stopPropagation: true,
         }),
       };
 
-      const secondSubscriber: RunAgentSubscriber = {
+      const secondSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn(),
       };
 
@@ -372,13 +372,13 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should continue to next subscriber when stopPropagation is false", async () => {
-      const firstSubscriber: RunAgentSubscriber = {
+      const firstSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({
           stopPropagation: false,
         }),
       };
 
-      const secondSubscriber: RunAgentSubscriber = {
+      const secondSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn(),
       };
 
@@ -397,11 +397,11 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should continue to next subscriber when stopPropagation is undefined", async () => {
-      const firstSubscriber: RunAgentSubscriber = {
+      const firstSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({}), // No stopPropagation field
       };
 
-      const secondSubscriber: RunAgentSubscriber = {
+      const secondSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn(),
       };
 
@@ -420,7 +420,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should stop default behavior on error when stopPropagation is true", async () => {
-      const errorHandlingSubscriber: RunAgentSubscriber = {
+      const errorHandlingSubscriber: AgentSubscriber = {
         onRunFailed: jest.fn().mockReturnValue({
           stopPropagation: true,
         }),
@@ -461,7 +461,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should allow default error behavior when stopPropagation is false", async () => {
-      const errorHandlingSubscriber: RunAgentSubscriber = {
+      const errorHandlingSubscriber: AgentSubscriber = {
         onRunFailed: jest.fn().mockReturnValue({
           stopPropagation: false,
         }),
@@ -502,19 +502,19 @@ describe("RunAgentSubscriber", () => {
     it("should call subscribers in the order they were added", async () => {
       const callOrder: string[] = [];
 
-      const subscriber1: RunAgentSubscriber = {
+      const subscriber1: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation(() => {
           callOrder.push("subscriber1");
         }),
       };
 
-      const subscriber2: RunAgentSubscriber = {
+      const subscriber2: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation(() => {
           callOrder.push("subscriber2");
         }),
       };
 
-      const subscriber3: RunAgentSubscriber = {
+      const subscriber3: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation(() => {
           callOrder.push("subscriber3");
         }),
@@ -534,13 +534,13 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should pass mutations from one subscriber to the next", async () => {
-      const subscriber1: RunAgentSubscriber = {
+      const subscriber1: AgentSubscriber = {
         onRunInitialized: jest.fn().mockReturnValue({
           state: { step: 1 },
         }),
       };
 
-      const subscriber2: RunAgentSubscriber = {
+      const subscriber2: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation((params) => {
           // Should receive the state modified by subscriber1
           expect(params.state).toEqual({ step: 1 });
@@ -550,7 +550,7 @@ describe("RunAgentSubscriber", () => {
         }),
       };
 
-      const subscriber3: RunAgentSubscriber = {
+      const subscriber3: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation((params) => {
           // Should receive the state modified by subscriber2
           expect(params.state).toEqual({ step: 2 });
@@ -607,7 +607,7 @@ describe("RunAgentSubscriber", () => {
         delta: "Hello",
       };
 
-      const specificSubscriber: RunAgentSubscriber = {
+      const specificSubscriber: AgentSubscriber = {
         onTextMessageStartEvent: jest.fn(),
         onTextMessageContentEvent: jest.fn(),
       };
@@ -653,7 +653,7 @@ describe("RunAgentSubscriber", () => {
         } as StateSnapshotEvent,
       ];
 
-      const genericSubscriber: RunAgentSubscriber = {
+      const genericSubscriber: AgentSubscriber = {
         onEvent: jest.fn(),
       };
 
@@ -682,7 +682,7 @@ describe("RunAgentSubscriber", () => {
     it("should call lifecycle callbacks in correct order", async () => {
       const callOrder: string[] = [];
 
-      const lifecycleSubscriber: RunAgentSubscriber = {
+      const lifecycleSubscriber: AgentSubscriber = {
         onRunInitialized: jest.fn().mockImplementation(() => {
           callOrder.push("initialized");
         }),
@@ -702,7 +702,7 @@ describe("RunAgentSubscriber", () => {
     });
 
     it("should call onRunFinalized even after errors", async () => {
-      const lifecycleSubscriber: RunAgentSubscriber = {
+      const lifecycleSubscriber: AgentSubscriber = {
         onRunFailed: jest.fn().mockReturnValue({
           stopPropagation: true, // Handle the error
         }),

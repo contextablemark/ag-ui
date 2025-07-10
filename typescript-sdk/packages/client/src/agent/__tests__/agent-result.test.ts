@@ -1,5 +1,5 @@
 import { AbstractAgent } from "../agent";
-import { RunAgentSubscriber } from "../subscriber";
+import { AgentSubscriber } from "../subscriber";
 import {
   BaseEvent,
   EventType,
@@ -368,7 +368,7 @@ describe("Agent Result", () => {
 
   describe("subscriber notifications integration", () => {
     it("should track newMessages without interfering with existing event processing", async () => {
-      const mockSubscriber: RunAgentSubscriber = {
+      const mockSubscriber: AgentSubscriber = {
         onNewMessage: jest.fn(),
         onMessagesChanged: jest.fn(),
         onNewToolCall: jest.fn(),
@@ -414,7 +414,7 @@ describe("Agent Result", () => {
     });
 
     it("should return empty newMessages when no messages are added", async () => {
-      const mockSubscriber: RunAgentSubscriber = {
+      const mockSubscriber: AgentSubscriber = {
         onNewMessage: jest.fn(),
         onMessagesChanged: jest.fn(),
         onNewToolCall: jest.fn(),
