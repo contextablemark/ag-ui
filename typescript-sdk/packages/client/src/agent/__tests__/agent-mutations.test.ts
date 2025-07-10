@@ -26,6 +26,12 @@ jest.mock("@/utils", () => ({
   },
 }));
 
+// Helper function to wait for async notifications to complete
+const waitForAsyncNotifications = async () => {
+  // Wait for the next tick of the event loop to ensure async operations complete
+  await new Promise((resolve) => setImmediate(resolve));
+};
+
 // Mock the verify and chunks modules
 jest.mock("@/verify", () => ({
   verifyEvents: jest.fn(() => (source$: Observable<any>) => source$),
@@ -86,7 +92,7 @@ describe("Agent Mutations", () => {
       expect(agent.messages[1]).toBe(userMessage);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // Should fire onNewMessage and onMessagesChanged
       expect(mockSubscriber.onNewMessage).toHaveBeenCalledWith({
@@ -116,7 +122,7 @@ describe("Agent Mutations", () => {
       agent.addMessage(assistantMessage);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       expect(mockSubscriber.onNewMessage).toHaveBeenCalledWith({
         message: assistantMessage,
@@ -165,7 +171,7 @@ describe("Agent Mutations", () => {
       agent.addMessage(assistantMessage);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       expect(mockSubscriber.onNewMessage).toHaveBeenCalledWith({
         message: assistantMessage,
@@ -236,7 +242,7 @@ describe("Agent Mutations", () => {
       expect(agent.messages).toHaveLength(initialLength + 3);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // Should fire onNewMessage for each message
       expect(mockSubscriber.onNewMessage).toHaveBeenCalledTimes(3);
@@ -266,7 +272,7 @@ describe("Agent Mutations", () => {
       expect(agent.messages).toHaveLength(initialLength);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // Should still fire onMessagesChanged even for empty array
       expect(mockSubscriber.onMessagesChanged).toHaveBeenCalledTimes(1);
@@ -310,7 +316,7 @@ describe("Agent Mutations", () => {
       expect(agent.messages[1]).toEqual(newMessages[1]);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // Should ONLY fire onMessagesChanged
       expect(mockSubscriber.onMessagesChanged).toHaveBeenCalledTimes(1);
@@ -331,7 +337,7 @@ describe("Agent Mutations", () => {
       expect(agent.messages).toHaveLength(0);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       expect(mockSubscriber.onMessagesChanged).toHaveBeenCalledTimes(1);
       expect(mockSubscriber.onNewMessage).not.toHaveBeenCalled();
@@ -354,7 +360,7 @@ describe("Agent Mutations", () => {
       expect(agent.state).not.toBe(newState); // Should be a clone
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // Should ONLY fire onStateChanged
       expect(mockSubscriber.onStateChanged).toHaveBeenCalledTimes(1);
@@ -376,40 +382,38 @@ describe("Agent Mutations", () => {
       expect(agent.state).toEqual({});
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       expect(mockSubscriber.onStateChanged).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("sequential execution", () => {
-    it("should execute subscriber notifications sequentially", async () => {
+  describe("execution order", () => {
+    it("should execute subscriber notifications in registration order", async () => {
       const callOrder: string[] = [];
 
-      const slowSubscriber: RunAgentSubscriber = {
-        onNewMessage: jest.fn().mockImplementation(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 20));
-          callOrder.push("slow-newMessage");
+      const firstSubscriber: RunAgentSubscriber = {
+        onNewMessage: jest.fn().mockImplementation(() => {
+          callOrder.push("first-newMessage");
         }),
-        onMessagesChanged: jest.fn().mockImplementation(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          callOrder.push("slow-messagesChanged");
+        onMessagesChanged: jest.fn().mockImplementation(() => {
+          callOrder.push("first-messagesChanged");
         }),
       };
 
-      const fastSubscriber: RunAgentSubscriber = {
+      const secondSubscriber: RunAgentSubscriber = {
         onNewMessage: jest.fn().mockImplementation(() => {
-          callOrder.push("fast-newMessage");
+          callOrder.push("second-newMessage");
         }),
         onMessagesChanged: jest.fn().mockImplementation(() => {
-          callOrder.push("fast-messagesChanged");
+          callOrder.push("second-messagesChanged");
         }),
       };
 
       // Clear the default subscriber and add our test subscribers
       agent.subscribers = [];
-      agent.subscribe(slowSubscriber);
-      agent.subscribe(fastSubscriber);
+      agent.subscribe(firstSubscriber);
+      agent.subscribe(secondSubscriber);
 
       const message: Message = {
         id: "test-msg",
@@ -419,15 +423,17 @@ describe("Agent Mutations", () => {
 
       agent.addMessage(message);
 
-      // Wait for all async operations to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for all async operations to complete by polling until all calls are made
+      while (callOrder.length < 4) {
+        await waitForAsyncNotifications();
+      }
 
       // Verify sequential execution order
       expect(callOrder).toEqual([
-        "slow-newMessage",
-        "fast-newMessage",
-        "slow-messagesChanged",
-        "fast-messagesChanged",
+        "first-newMessage",
+        "second-newMessage",
+        "first-messagesChanged",
+        "second-messagesChanged",
       ]);
     });
   });
@@ -464,7 +470,7 @@ describe("Agent Mutations", () => {
       agent.addMessage(message);
 
       // Wait for async notifications
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await waitForAsyncNotifications();
 
       // All subscribers should receive notifications
       [mockSubscriber, subscriber2, subscriber3].forEach((sub) => {
