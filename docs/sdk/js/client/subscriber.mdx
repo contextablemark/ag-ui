@@ -1,0 +1,319 @@
+---
+title: "RunAgentSubscriber"
+description:
+  "Event-driven subscriber system for agent lifecycle and event handling"
+---
+
+# RunAgentSubscriber
+
+The `RunAgentSubscriber` interface provides a comprehensive event-driven system
+for handling agent lifecycle events, message updates, and state mutations during
+agent execution. It allows you to hook into various stages of the agent's
+operation and modify its behavior.
+
+```typescript
+import { RunAgentSubscriber } from "@ag-ui/client"
+```
+
+## Core Interfaces
+
+### RunAgentSubscriber
+
+The main interface that defines all available event handlers and lifecycle
+hooks.
+
+```typescript
+interface RunAgentSubscriber {
+  // Lifecycle events
+  onRunInitialized?(): MaybePromise<Omit<
+    AgentStateMutation,
+    "stopPropagation"
+  > | void>
+  onRunFailed?(params: {
+    error: Error
+  }): MaybePromise<Omit<AgentStateMutation, "stopPropagation"> | void>
+  onRunFinalized?(): MaybePromise<Omit<
+    AgentStateMutation,
+    "stopPropagation"
+  > | void>
+
+  // Event handlers
+  onEvent?(params: {
+    event: BaseEvent
+  }): MaybePromise<AgentStateMutation | void>
+
+  // State change handlers
+  onMessagesChanged?(): MaybePromise<void>
+  onStateChanged?(): MaybePromise<void>
+  onNewMessage?(params: { message: Message }): MaybePromise<void>
+  onNewToolCall?(params: { toolCall: ToolCall }): MaybePromise<void>
+
+  // ... and many more event-specific handlers
+}
+```
+
+### AgentStateMutation
+
+Defines how subscribers can modify the agent's state and control event
+propagation.
+
+```typescript
+interface AgentStateMutation {
+  messages?: Message[] // Update the message history
+  state?: State // Update the agent state
+  stopPropagation?: boolean // Prevent further subscribers from processing
+}
+```
+
+### RunAgentSubscriberParams
+
+Common parameters passed to most subscriber methods.
+
+```typescript
+interface RunAgentSubscriberParams {
+  messages: Message[] // Current message history
+  state: State // Current agent state
+  agent: AbstractAgent // The agent instance
+  input: RunAgentInput // The original input parameters
+}
+```
+
+## Event Handlers
+
+### Lifecycle Events
+
+#### onRunInitialized()
+
+Called when the agent run is first initialized, before any processing begins.
+
+#### onRunFailed()
+
+Called when the agent run encounters an error.
+
+#### onRunFinalized()
+
+Called when the agent run completes, regardless of success or failure.
+
+### Message Events
+
+#### onTextMessageStartEvent()
+
+Triggered when a text message starts being generated.
+
+#### onTextMessageContentEvent()
+
+Called for each chunk of text content as it's generated.
+
+```typescript
+onTextMessageContentEvent?(params: {
+  event: TextMessageContentEvent
+  textMessageBuffer: string // Accumulated text so far
+}): MaybePromise<AgentStateMutation | void>
+```
+
+#### onTextMessageEndEvent()
+
+Called when a text message generation is complete.
+
+### Tool Call Events
+
+#### onToolCallStartEvent()
+
+Triggered when a tool call begins.
+
+#### onToolCallArgsEvent()
+
+Called as tool call arguments are being parsed.
+
+```typescript
+onToolCallArgsEvent?(params: {
+  event: ToolCallArgsEvent
+  toolCallBuffer: string // Raw argument buffer
+  toolCallName: string // Name of the tool being called
+  partialToolCallArgs: Record<string, any> // Parsed arguments so far
+}): MaybePromise<AgentStateMutation | void>
+```
+
+#### onToolCallEndEvent()
+
+Called when a tool call is complete with final arguments.
+
+#### onToolCallResultEvent()
+
+Triggered when a tool call result is received.
+
+### State Events
+
+#### onStateSnapshotEvent()
+
+Called when a complete state snapshot is provided.
+
+#### onStateDeltaEvent()
+
+Triggered when partial state changes are applied.
+
+#### onMessagesSnapshotEvent()
+
+Called when a complete message history snapshot is provided.
+
+## State Management
+
+### Mutation Control
+
+Subscribers can modify the agent's state by returning an `AgentStateMutation`
+object:
+
+```typescript
+const subscriber: RunAgentSubscriber = {
+  onTextMessageEndEvent: ({ event, textMessageBuffer, messages, state }) => {
+    // Add the completed message to history
+    const newMessage: Message = {
+      id: generateId(),
+      role: "assistant",
+      content: [{ type: "text", text: textMessageBuffer }],
+    }
+
+    return {
+      messages: [...messages, newMessage],
+      state: { ...state, lastResponse: textMessageBuffer },
+    }
+  },
+}
+```
+
+### Stopping Propagation
+
+Use `stopPropagation: true` to prevent subsequent subscribers from processing
+the event:
+
+```typescript
+const prioritySubscriber: RunAgentSubscriber = {
+  onRunErrorEvent: ({ error }) => {
+    if (error.message.includes("critical")) {
+      // Handle critical error and stop other subscribers
+      return { stopPropagation: true }
+    }
+  },
+}
+```
+
+## Utility Functions
+
+### runSubscribersWithMutation()
+
+Executes multiple subscribers in sequence and accumulates their mutations.
+
+```typescript
+async function runSubscribersWithMutation(
+  subscribers: RunAgentSubscriber[],
+  initialMessages: Message[],
+  initialState: State,
+  executor: (
+    subscriber,
+    messages,
+    state
+  ) => MaybePromise<AgentStateMutation | void>
+): Promise<AgentStateMutation>
+```
+
+## Usage Examples
+
+### Basic Event Logging
+
+```typescript
+const loggingSubscriber: RunAgentSubscriber = {
+  onRunStartedEvent: ({ event }) => {
+    console.log("Agent run started:", event.runId)
+  },
+
+  onTextMessageContentEvent: ({ textMessageBuffer }) => {
+    console.log("Text content:", textMessageBuffer)
+  },
+
+  onRunFinishedEvent: ({ event, result }) => {
+    console.log("Agent run completed:", result)
+  },
+}
+```
+
+### Message History Management
+
+```typescript
+const historySubscriber: RunAgentSubscriber = {
+  onTextMessageEndEvent: ({ textMessageBuffer, messages }) => {
+    const assistantMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: [{ type: "text", text: textMessageBuffer }],
+    }
+
+    return {
+      messages: [...messages, assistantMessage],
+    }
+  },
+}
+```
+
+### State Persistence
+
+```typescript
+const persistenceSubscriber: RunAgentSubscriber = {
+  onStateChanged: async ({ state }) => {
+    await saveStateToDatabase(state)
+  },
+
+  onMessagesChanged: async ({ messages }) => {
+    await saveMessagesToDatabase(messages)
+  },
+}
+```
+
+### Error Handling
+
+```typescript
+const errorHandlingSubscriber: RunAgentSubscriber = {
+  onRunFailed: ({ error, state }) => {
+    console.error("Agent run failed:", error)
+
+    return {
+      state: {
+        ...state,
+        error: error.message,
+        errorTimestamp: new Date().toISOString(),
+      },
+    }
+  },
+}
+```
+
+## Integration with Agents
+
+Subscribers are typically used with agents during the `runAgent()` call:
+
+```typescript
+const agent = new HttpAgent({ url: "https://api.example.com/agent" })
+
+// Register subscribers
+agent.addSubscriber(loggingSubscriber)
+agent.addSubscriber(historySubscriber)
+agent.addSubscriber(persistenceSubscriber)
+
+// Run the agent
+const eventStream = agent.runAgent({
+  tools: [myTool],
+  context: [{ type: "text", content: "Context information" }],
+})
+```
+
+## Best Practices
+
+1. **Error Handling**: Always wrap subscriber logic in try-catch blocks or
+   handle promise rejections
+2. **Performance**: Keep subscribers lightweight; heavy operations should be
+   async
+3. **State Immutability**: Always create new objects when modifying state or
+   messages
+4. **Event Ordering**: Subscribers run in registration order; critical
+   subscribers should be registered first
+5. **Propagation Control**: Use `stopPropagation` sparingly, only for critical
+   error conditions
