@@ -287,52 +287,119 @@ export abstract class AbstractAgent {
     // Add message to the messages array
     this.messages.push(message);
 
-    // Create minimal input for subscriber context
-    const input: RunAgentInput = {
-      threadId: this.threadId,
-      runId: uuidv4(),
-      tools: [],
-      context: [],
-      forwardedProps: {},
-      state: structuredClone_(this.state),
-      messages: structuredClone_(this.messages),
-    };
+    // Notify subscribers sequentially in the background
+    (async () => {
+      // Fire onNewMessage sequentially
+      for (const subscriber of this.subscribers) {
+        await subscriber.onNewMessage?.({
+          message,
+          messages: this.messages,
+          state: this.state,
+          agent: this,
+        });
+      }
 
-    // Fire onMessagesChanged
-    this.subscribers.forEach((subscriber) => {
-      subscriber.onMessagesChanged?.({
-        messages: this.messages,
-        state: this.state,
-        agent: this,
-        input,
-      });
-    });
+      // Fire onNewToolCall if the message is from assistant and contains tool calls
+      if (message.role === "assistant" && message.toolCalls) {
+        for (const toolCall of message.toolCalls) {
+          for (const subscriber of this.subscribers) {
+            await subscriber.onNewToolCall?.({
+              toolCall,
+              messages: this.messages,
+              state: this.state,
+              agent: this,
+            });
+          }
+        }
+      }
 
-    // Fire onNewMessage
-    this.subscribers.forEach((subscriber) => {
-      subscriber.onNewMessage?.({
-        message,
-        messages: this.messages,
-        state: this.state,
-        agent: this,
-        input,
-      });
-    });
+      // Fire onMessagesChanged sequentially
+      for (const subscriber of this.subscribers) {
+        await subscriber.onMessagesChanged?.({
+          messages: this.messages,
+          state: this.state,
+          agent: this,
+        });
+      }
+    })();
+  }
 
-    // Fire onNewToolCall if the message is from assistant and contains tool calls
-    if (message.role === "assistant" && message.toolCalls) {
-      message.toolCalls.forEach((toolCall: ToolCall) => {
-        this.subscribers.forEach((subscriber) => {
-          subscriber.onNewToolCall?.({
-            toolCall,
+  public addMessages(messages: Message[]) {
+    // Add all messages to the messages array
+    this.messages.push(...messages);
+
+    // Notify subscribers sequentially in the background
+    (async () => {
+      // Fire onNewMessage and onNewToolCall for each message sequentially
+      for (const message of messages) {
+        // Fire onNewMessage sequentially
+        for (const subscriber of this.subscribers) {
+          await subscriber.onNewMessage?.({
+            message,
             messages: this.messages,
             state: this.state,
             agent: this,
-            input,
           });
+        }
+
+        // Fire onNewToolCall if the message is from assistant and contains tool calls
+        if (message.role === "assistant" && message.toolCalls) {
+          for (const toolCall of message.toolCalls) {
+            for (const subscriber of this.subscribers) {
+              await subscriber.onNewToolCall?.({
+                toolCall,
+                messages: this.messages,
+                state: this.state,
+                agent: this,
+              });
+            }
+          }
+        }
+      }
+
+      // Fire onMessagesChanged once at the end sequentially
+      for (const subscriber of this.subscribers) {
+        await subscriber.onMessagesChanged?.({
+          messages: this.messages,
+          state: this.state,
+          agent: this,
         });
-      });
-    }
+      }
+    })();
+  }
+
+  public setMessages(messages: Message[]) {
+    // Replace the entire messages array
+    this.messages = structuredClone_(messages);
+
+    // Notify subscribers sequentially in the background
+    (async () => {
+      // Fire onMessagesChanged sequentially
+      for (const subscriber of this.subscribers) {
+        await subscriber.onMessagesChanged?.({
+          messages: this.messages,
+          state: this.state,
+          agent: this,
+        });
+      }
+    })();
+  }
+
+  public setState(state: State) {
+    // Replace the entire state
+    this.state = structuredClone_(state);
+
+    // Notify subscribers sequentially in the background
+    (async () => {
+      // Fire onStateChanged sequentially
+      for (const subscriber of this.subscribers) {
+        await subscriber.onStateChanged?.({
+          messages: this.messages,
+          state: this.state,
+          agent: this,
+        });
+      }
+    })();
   }
 
   public legacy_to_be_removed_runAgentBridged(
