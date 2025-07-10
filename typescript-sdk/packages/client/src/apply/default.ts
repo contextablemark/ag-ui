@@ -203,7 +203,7 @@ export const defaultApplyEvents = (
               messages.length > 0 &&
               messages[messages.length - 1].id === parentMessageId
             ) {
-              targetMessage = messages[messages.length - 1];
+              targetMessage = messages[messages.length - 1] as AssistantMessage;
             } else {
               // Create a new message otherwise
               targetMessage = {
@@ -268,10 +268,10 @@ export const defaultApplyEvents = (
             const { delta } = event as ToolCallArgsEvent;
 
             // Get the last message
-            const lastMessage = messages[messages.length - 1];
+            const lastMessage = messages[messages.length - 1] as AssistantMessage;
 
             // Get the last tool call
-            const lastToolCall = lastMessage.toolCalls[lastMessage.toolCalls.length - 1];
+            const lastToolCall = lastMessage.toolCalls![lastMessage.toolCalls!.length - 1];
 
             // Append the arguments
             lastToolCall.function.arguments += delta;
@@ -314,10 +314,9 @@ export const defaultApplyEvents = (
           await Promise.all(
             subscribers.map((subscriber) => {
               subscriber.onNewToolCall?.({
-                toolCall:
-                  messages[messages.length - 1].toolCalls[
-                    messages[messages.length - 1].toolCalls.length - 1
-                  ],
+                toolCall: (messages[messages.length - 1] as AssistantMessage).toolCalls![
+                  (messages[messages.length - 1] as AssistantMessage).toolCalls!.length - 1
+                ],
                 messages,
                 state,
                 agent,
