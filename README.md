@@ -1,6 +1,5 @@
-[![AG-UI Workshop – June 20](https://img.shields.io/badge/AG--UI%20Workshop%20%E2%80%94June%2020-blue?style=flat-square)](https://go.copilotkit.ai/ag-ui-build-an-agent-canvas)
-![Discord](https://img.shields.io/discord/1379082175625953370?logo=discord&logoColor=%23FFFFFF&label=Discord&color=%236963ff)
-
+# Note 
+# This fork has been archived - please see https://github.com/Contextable/ag-ui instead!
 
 # <img src="https://github.com/user-attachments/assets/ebc0dd08-8732-4519-9b6c-452ce54d8058" alt="ag-ui Logo" width="45"/> AG-UI: The Agent-User Interaction Protocol
 AG-UI is a lightweight, event-based protocol that standardizes how AI agents connect to front-end applications. Built for simplicity and flexibility, it enables seamless integration between your AI agents and user interfaces.
